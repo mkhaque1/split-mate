@@ -1,75 +1,292 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import AddExpenseModal from '@/components/AddExpenseModal';
+import Button from '@/components/Button';
+import Card from '@/components/Card';
+import ExpenseItem from '@/components/ExpenseItem';
+import GradientText from '@/components/GradientText';
+import { FirestoreService } from '@/lib/firestore';
+import { User as UserType } from '@/types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { DollarSign, Plus, User } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useApp } from '../../context/AppContext';
+import { CalculationService } from '../../lib/calculation';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function ExpensesScreen() {
+  const { user, currentGroup, expenses, refreshExpenses } = useApp();
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
 
-export default function HomeScreen() {
+  useEffect(() => {
+    if (!user) {
+      router.replace('/Auth');
+      return;
+    }
+    loadGroupMembers();
+  }, [user, currentGroup]);
+
+  const loadGroupMembers = async () => {
+    if (!currentGroup) return;
+
+    try {
+      const members = await FirestoreService.getUsers(currentGroup.members);
+      setGroupMembers(members);
+    } catch (error) {
+      console.error('Error loading group members:', error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshExpenses();
+    await loadGroupMembers();
+    setRefreshing(false);
+  };
+
+  const handleExpenseAdded = async () => {
+    setShowAddExpense(false);
+    await refreshExpenses();
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    Alert.alert(
+      'Delete Expense',
+      'Are you sure you want to delete this expense?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await FirestoreService.deleteExpense(expenseId);
+              await refreshExpenses();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete expense');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getUserName = (userId: string) => {
+    const member = groupMembers.find((m) => m.id === userId);
+    return member?.displayName || 'Unknown';
+  };
+
+  const totalExpenses = CalculationService.getTotalExpenses(expenses);
+  const userPaidTotal = user
+    ? CalculationService.getUserExpenseTotal(expenses, user.id)
+    : 0;
+  const userOwedTotal = user
+    ? CalculationService.getUserOwedAmount(expenses, user.id)
+    : 0;
+  const userBalance = userPaidTotal - userOwedTotal;
+
+  if (!user || !currentGroup) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+        <View style={styles.header}>
+          <GradientText
+            style={styles.title}
+            colors={['#ffffff', '#a1a1aa', '#71717a']}
+          >
+            Expenses
+          </GradientText>
+          <Text style={styles.groupName}>{currentGroup.name}</Text>
+        </View>
+
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Summary Cards */}
+          <View style={styles.summaryRow}>
+            <Card style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <DollarSign size={20} color="#6366f1" />
+                <Text style={styles.summaryLabel}>Total</Text>
+              </View>
+              <Text style={styles.summaryAmount}>
+                {currentGroup.currency} {totalExpenses.toFixed(2)}
+              </Text>
+            </Card>
+
+            <Card style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <User
+                  size={20}
+                  color={userBalance >= 0 ? '#10b981' : '#ef4444'}
+                />
+                <Text style={styles.summaryLabel}>Your Balance</Text>
+              </View>
+              <Text
+                style={[
+                  styles.summaryAmount,
+                  { color: userBalance >= 0 ? '#10b981' : '#ef4444' },
+                ]}
+              >
+                {userBalance >= 0 ? '+' : ''}
+                {currentGroup.currency} {userBalance.toFixed(2)}
+              </Text>
+            </Card>
+          </View>
+
+          {/* Add Expense Button */}
+          <Button
+            title="Add New Expense"
+            icon={<Plus size={20} color="#ffffff" />}
+            onPress={() => setShowAddExpense(true)}
+            style={styles.addButton}
+          />
+
+          {/* Expenses List */}
+          <View style={styles.expensesSection}>
+            <Text style={styles.sectionTitle}>Recent Expenses</Text>
+
+            {expenses.length === 0 ? (
+              <Card style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No expenses yet</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  Tap "Add New Expense" to get started
+                </Text>
+              </Card>
+            ) : (
+              expenses.map((expense) => (
+                <ExpenseItem
+                  key={expense.id}
+                  expense={expense}
+                  getUserName={getUserName}
+                  currency={currentGroup.currency}
+                  onDelete={handleDeleteExpense}
+                />
+              ))
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Add Expense Modal */}
+        <AddExpenseModal
+          visible={showAddExpense}
+          onClose={() => setShowAddExpense(false)}
+          onExpenseAdded={handleExpenseAdded}
+          groupMembers={groupMembers}
+          currency={currentGroup.currency}
+          groupId={currentGroup.id}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0f0f0f',
+  },
+  loadingText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+  },
+  header: {
+    padding: 24,
+    paddingTop: 60,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 4,
+  },
+  groupName: {
+    fontSize: 16,
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Regular',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#262626',
+  },
+  summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  summaryLabel: {
+    fontSize: 14,
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Medium',
+  },
+  summaryAmount: {
+    fontSize: 20,
+    color: '#ffffff',
+    fontFamily: 'Inter-Bold',
+  },
+  addButton: {
+    marginBottom: 32,
+  },
+  expensesSection: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 16,
+  },
+  emptyState: {
+    backgroundColor: '#262626',
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontFamily: 'Inter-Medium',
+    marginBottom: 4,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Regular',
   },
 });
