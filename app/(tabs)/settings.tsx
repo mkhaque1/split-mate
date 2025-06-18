@@ -46,7 +46,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (!user) {
-      router.replace('/Auth');
+      router.replace('/auth');
       return;
     }
     loadGroupMembers();
@@ -85,7 +85,7 @@ export default function SettingsScreen() {
         onPress: async () => {
           try {
             await signOut();
-            router.replace('/Auth');
+            router.replace('/auth');
           } catch (error) {
             Alert.alert('Error', 'Failed to sign out');
           }

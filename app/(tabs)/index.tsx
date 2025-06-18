@@ -28,7 +28,7 @@ export default function ExpensesScreen() {
 
   useEffect(() => {
     if (!user) {
-      router.replace('/Auth');
+      router.replace('/auth');
       return;
     }
     loadGroupMembers();

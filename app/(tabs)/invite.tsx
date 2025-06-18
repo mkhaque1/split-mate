@@ -31,7 +31,7 @@ export default function InviteScreen() {
 
   useEffect(() => {
     if (!user) {
-      router.replace('/Auth');
+      router.replace('/auth');
       return;
     }
     loadGroupMembers();

@@ -30,7 +30,7 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     if (!user) {
-      router.replace('/Auth');
+      router.replace('/auth');
       return;
     }
     loadGroupMembers();
