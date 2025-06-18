@@ -2,11 +2,7 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { getAnalytics } from 'firebase/analytics';
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-} from 'firebase/auth';
+import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Get env variables
@@ -43,14 +39,9 @@ try {
 }
 
 // Use initializeAuth with AsyncStorage for React Native
-let auth;
-try {
-  auth = getAuth(app);
-} catch {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  });
-}
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
 
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
