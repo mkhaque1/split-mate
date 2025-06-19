@@ -35,7 +35,6 @@ export default function AuthScreen() {
     try {
       if (isSignUp) {
         const user = await AuthService.signUp(email, password, displayName);
-        
 
         // // Create a default group for the user
         await FirestoreService.createGroup({
@@ -49,7 +48,6 @@ export default function AuthScreen() {
       } else {
         await AuthService.signIn(email, password);
         await refreshGroups();
-
       }
 
       router.replace('/(tabs)');
@@ -117,7 +115,7 @@ export default function AuthScreen() {
                 onChangeText={setEmail}
                 placeholder="Enter your email"
                 placeholderTextColor="#71717a"
-                keyboardType="email-address"
+                // keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>
