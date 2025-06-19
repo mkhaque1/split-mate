@@ -36,6 +36,7 @@ export default function ExpensesScreen() {
   }, [user, currentGroup]);
 
   const loadGroupMembers = async () => {
+    console.log('Loading group members for group:', currentGroup);
     if (!currentGroup) return;
 
     try {

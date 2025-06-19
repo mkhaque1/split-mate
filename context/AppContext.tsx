@@ -1,7 +1,7 @@
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
 import { Expense, Group, User } from '@/types';
-import React, {
+import {
   createContext,
   ReactNode,
   useContext,
@@ -56,16 +56,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentGroup]);
 
   const refreshGroups = async () => {
+    console.log('Refreshing groups for user:', user);
     if (!user) return;
 
     try {
+
+     console.log('Fetching groups for user')
       const userGroups = await FirestoreService.getUserGroups(user.id);
+     console.log('Fetched groups:', userGroups);
+
       setGroups(userGroups);
 
       // Set first group as current if none selected
-      if (!currentGroup && userGroups.length > 0) {
+      // if (!currentGroup && userGroups.length > 0) {
+        
         setCurrentGroup(userGroups[0]);
-      }
+      // }
     } catch (error) {
       console.error('Error fetching groups:', error);
     }
