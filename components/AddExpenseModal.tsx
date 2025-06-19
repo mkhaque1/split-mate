@@ -4,7 +4,7 @@ import { ExpenseCategory, User } from '@/types';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DollarSign, Tag, Users, X } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -57,6 +57,11 @@ export default function AddExpenseModal({
     groupMembers.map((m) => m.id)
   );
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPaidBy(user?.id || '');
+    setSplitBetween(groupMembers.map((m) => m.id));
+  }, [groupMembers, user]);
 
   const resetForm = () => {
     setTitle('');

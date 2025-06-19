@@ -1,12 +1,23 @@
+import AddMemberModal from '@/components/AddMemberModal';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import CurrencySelector from '@/components/CurrencySelector';
 import GradientText from '@/components/GradientText';
 import { useApp } from '@/context/AppContext';
+import { db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import {
   DollarSign,
   LogOut,
@@ -43,6 +54,7 @@ export default function SettingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -127,6 +139,44 @@ export default function SettingsScreen() {
         },
       ]
     );
+  };
+
+  // Add member handler
+  const handleAddMember = async (member) => {
+    // Find user by email in Firestore
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', member.email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      Alert.alert(
+        'User Not Found',
+        'No user found with this email. Please ask them to sign up first.'
+      );
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userId = userDoc.id;
+
+    // Add userId to group members in Firestore
+    const groupRef = doc(db, 'groups', currentGroup.id);
+    const groupSnap = await getDoc(groupRef);
+    if (!groupSnap.exists()) return;
+
+    const currentMembers = groupSnap.data().members || [];
+    if (currentMembers.includes(userId)) {
+      Alert.alert('Already a member', 'This user is already in the group.');
+      return;
+    }
+
+    await updateDoc(groupRef, {
+      members: [...currentMembers, userId],
+    });
+
+    // Refresh local members list
+    await loadGroupMembers();
+    Alert.alert('Success', 'Member added to the group!');
   };
 
   if (!user || !currentGroup) {
@@ -251,17 +301,24 @@ export default function SettingsScreen() {
                 </View>
               ))}
               <View>
-                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
-                  No members in this group
-                </Text>
+                {groupMembers.length === 0 && (
+                  <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
+                    No members in this group
+                  </Text>
+                )}
                 <Button
                   title="Add Members Manually?"
                   variant="outline"
                   size="sm"
-                  onPress={() => Alert.alert('Feature coming soon!')}
+                  onPress={() => setShowAddMemberModal(true)}
                   style={{ marginTop: 18 }}
                 />
               </View>
+              <AddMemberModal
+                visible={showAddMemberModal}
+                onClose={() => setShowAddMemberModal(false)}
+                onAdd={handleAddMember}
+              />
             </View>
           </Card>
 

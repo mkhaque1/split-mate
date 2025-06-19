@@ -21,11 +21,12 @@ import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
 
 export default function ExpensesScreen() {
-  const { user, currentGroup, expenses, refreshExpenses ,refreshGroups} = useApp();
+  const { user, currentGroup, expenses, refreshExpenses, refreshGroups } =
+    useApp();
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
-console.log('user', user);
+  console.log('user', user);
   console.log('currentGroup', currentGroup);
   console.log('expenses', expenses);
   useEffect(() => {
@@ -33,7 +34,7 @@ console.log('user', user);
       router.replace('/auth');
       return;
     }
-    refreshGroups()
+    refreshGroups();
     refreshExpenses();
     loadGroupMembers();
   }, []);
@@ -96,7 +97,10 @@ console.log('user', user);
   }
 
   const totalExpenses = CalculationService.getTotalExpenses(expenses);
-  const userPaidTotal = CalculationService.getUserExpenseTotal(expenses, user.id);
+  const userPaidTotal = CalculationService.getUserExpenseTotal(
+    expenses,
+    user.id
+  );
   const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
   const userBalance = userPaidTotal - userOwedTotal;
 
@@ -189,7 +193,7 @@ console.log('user', user);
           visible={showAddExpense}
           onClose={() => setShowAddExpense(false)}
           onExpenseAdded={handleExpenseAdded}
-          groupMembers={groupMembers}
+          groupMembers={groupMembers} // <-- make sure this includes new members
           currency={currentGroup.currency}
           groupId={currentGroup.id}
         />
