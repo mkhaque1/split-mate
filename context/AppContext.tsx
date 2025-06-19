@@ -37,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
       setUser(authUser);
       if (authUser) {
+        console.log('User authenticated:', authUser);
         await refreshGroups();
       } else {
         setGroups([]);

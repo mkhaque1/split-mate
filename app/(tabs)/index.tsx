@@ -21,24 +21,25 @@ import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
 
 export default function ExpensesScreen() {
-  const { user, currentGroup, expenses, refreshExpenses } = useApp();
-  console.log('ExpensesScreen rendered with user:', user, 'group:', currentGroup, 'expenses:', expenses);
+  const { user, currentGroup, expenses, refreshExpenses ,refreshGroups} = useApp();
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
-
+console.log('user', user);
+  console.log('currentGroup', currentGroup);
+  console.log('expenses', expenses);
   useEffect(() => {
     if (!user) {
       router.replace('/auth');
       return;
     }
+    refreshGroups()
+    refreshExpenses();
     loadGroupMembers();
-  }, [user, currentGroup]);
+  }, []);
 
   const loadGroupMembers = async () => {
-    console.log('Loading group members for group:', currentGroup);
     if (!currentGroup) return;
-
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
       setGroupMembers(members);
@@ -86,22 +87,18 @@ export default function ExpensesScreen() {
     return member?.displayName || 'Unknown';
   };
 
-  const totalExpenses = CalculationService.getTotalExpenses(expenses);
-  const userPaidTotal = user
-    ? CalculationService.getUserExpenseTotal(expenses, user.id)
-    : 0;
-  const userOwedTotal = user
-    ? CalculationService.getUserOwedAmount(expenses, user.id)
-    : 0;
-  const userBalance = userPaidTotal - userOwedTotal;
-
   if (!user || !currentGroup) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>Loading Expense...</Text>
       </View>
     );
   }
+
+  const totalExpenses = CalculationService.getTotalExpenses(expenses);
+  const userPaidTotal = CalculationService.getUserExpenseTotal(expenses, user.id);
+  const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
+  const userBalance = userPaidTotal - userOwedTotal;
 
   return (
     <View style={styles.container}>
@@ -202,12 +199,8 @@ export default function ExpensesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  gradient: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
