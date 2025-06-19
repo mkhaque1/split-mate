@@ -250,6 +250,18 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               ))}
+              <View>
+                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
+                  No members in this group
+                </Text>
+                <Button
+                  title="Add Members Manually?"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => Alert.alert('Feature coming soon!')}
+                  style={{ marginTop: 18 }}
+                />
+              </View>
             </View>
           </Card>
 
