@@ -3,9 +3,12 @@ import GradientText from '@/components/GradientText';
 import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,6 +20,8 @@ import {
   View,
 } from 'react-native';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -24,6 +29,56 @@ export default function AuthScreen() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const { refreshGroups } = useApp();
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '<YOUR_EXPO_CLIENT_ID>',
+    iosClientId: '<YOUR_IOS_CLIENT_ID>',
+    androidClientId: '<YOUR_ANDROID_CLIENT_ID>',
+    webClientId: '<YOUR_WEB_CLIENT_ID>',
+  });
+
+  // Auto-login if user is already authenticated
+  useEffect(() => {
+    AuthService.getCurrentUser().then(async (user) => {
+      if (user) {
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        router.replace('/(tabs)');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token, access_token } = response.authentication as any;
+      handleGoogleLogin(id_token, access_token);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken: string, accessToken: string) => {
+    setLoading(true);
+    try {
+      const user = await AuthService.signInWithGoogle(idToken, accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      // ADD THIS LOGIC HERE
+      let groups = await FirestoreService.getUserGroups(user.id);
+      if (groups.length === 0) {
+        await FirestoreService.createGroup({
+          name: `${user.displayName || 'My'}'s Group`,
+          members: [user.id],
+          createdBy: user.id,
+          currency: 'USD',
+        });
+        await refreshGroups();
+      }
+
+      await refreshGroups();
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async () => {
     if (!email || !password || (isSignUp && !displayName)) {
@@ -92,6 +147,14 @@ export default function AuthScreen() {
                 style={styles.toggleButton}
               />
             </View>
+
+            <Button
+              title="Continue with Google"
+              onPress={() => promptAsync()}
+              loading={loading}
+              style={{ marginBottom: 16 }}
+              disabled={!request}
+            />
 
             {isSignUp && (
               <View style={styles.inputContainer}>

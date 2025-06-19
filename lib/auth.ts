@@ -2,7 +2,9 @@ import { User } from '@/types';
 import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
@@ -119,5 +121,33 @@ export class AuthService {
         callback(null);
       }
     });
+  }
+
+  static async signInWithGoogle(
+    idToken: string,
+    accessToken: string
+  ): Promise<User> {
+    const credential = GoogleAuthProvider.credential(idToken, accessToken);
+    const userCredential = await signInWithCredential(auth, credential);
+    const firebaseUser = userCredential.user;
+
+    // Check if user exists in Firestore, if not, create
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (!userDoc.exists()) {
+      const userData: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        displayName: firebaseUser.displayName || '',
+      };
+      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+      return userData;
+    }
+
+    return {
+      id: firebaseUser.uid,
+      email: firebaseUser.email!,
+      displayName: firebaseUser.displayName || '',
+      ...userDoc.data(),
+    };
   }
 }
