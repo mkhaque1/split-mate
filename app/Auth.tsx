@@ -5,7 +5,7 @@ import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -35,8 +35,9 @@ export default function AuthScreen() {
     try {
       if (isSignUp) {
         const user = await AuthService.signUp(email, password, displayName);
+        
 
-        // Create a default group for the user
+        // // Create a default group for the user
         await FirestoreService.createGroup({
           name: `${displayName}'s Group`,
           members: [user.id],
@@ -47,6 +48,8 @@ export default function AuthScreen() {
         await refreshGroups();
       } else {
         await AuthService.signIn(email, password);
+        await refreshGroups();
+
       }
 
       router.replace('/(tabs)');

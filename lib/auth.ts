@@ -21,7 +21,7 @@ export class AuthService {
               id: firebaseUser.uid,
               email: firebaseUser.email!,
               displayName: firebaseUser.displayName || '',
-              avatar: firebaseUser.photoURL || undefined,
+              // avatar: firebaseUser.photoURL || undefined,
               ...userDoc.data(),
             });
           } else {
@@ -29,7 +29,7 @@ export class AuthService {
               id: firebaseUser.uid,
               email: firebaseUser.email!,
               displayName: firebaseUser.displayName || '',
-              avatar: firebaseUser.photoURL || undefined,
+              // avatar: firebaseUser.photoURL || undefined,
             });
           }
         } else {
@@ -53,7 +53,7 @@ export class AuthService {
         id: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName: firebaseUser.displayName || '',
-        avatar: firebaseUser.photoURL || undefined,
+        // avatar: firebaseUser.photoURL || undefined,
         ...userDoc.data(),
       };
     }
@@ -62,7 +62,7 @@ export class AuthService {
       id: firebaseUser.uid,
       email: firebaseUser.email!,
       displayName: firebaseUser.displayName || '',
-      avatar: firebaseUser.photoURL || undefined,
+      // avatar: firebaseUser.photoURL || undefined,
     };
   }
 
@@ -84,7 +84,7 @@ export class AuthService {
       id: firebaseUser.uid,
       email: firebaseUser.email!,
       displayName,
-      avatar: undefined,
+      // avatar: undefined,
     };
 
     await setDoc(doc(db, 'users', firebaseUser.uid), userData);
@@ -104,7 +104,7 @@ export class AuthService {
             id: firebaseUser.uid,
             email: firebaseUser.email!,
             displayName: firebaseUser.displayName || '',
-            avatar: firebaseUser.photoURL || undefined,
+            // avatar: firebaseUser.photoURL || undefined,
             ...userDoc.data(),
           });
         } else {
@@ -112,7 +112,7 @@ export class AuthService {
             id: firebaseUser.uid,
             email: firebaseUser.email!,
             displayName: firebaseUser.displayName || '',
-            avatar: firebaseUser.photoURL || undefined,
+            // avatar: firebaseUser.photoURL || undefined,
           });
         }
       } else {

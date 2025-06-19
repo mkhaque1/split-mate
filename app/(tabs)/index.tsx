@@ -8,7 +8,7 @@ import { User as UserType } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { DollarSign, Plus, User } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   RefreshControl,
@@ -22,6 +22,7 @@ import { CalculationService } from '../../lib/calculation';
 
 export default function ExpensesScreen() {
   const { user, currentGroup, expenses, refreshExpenses } = useApp();
+  console.log('ExpensesScreen rendered with user:', user, 'group:', currentGroup, 'expenses:', expenses);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);

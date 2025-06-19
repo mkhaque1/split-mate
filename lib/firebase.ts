@@ -5,7 +5,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Get env variables
+// Get env variables from Constants
 const {
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
@@ -14,9 +14,10 @@ const {
   FIREBASE_MESSAGING_SENDER_ID,
   FIREBASE_APP_ID,
   FIREBASE_MEASUREMENT_ID,
-} = Constants.expoConfig?.extra || process.env;
+} = Constants.expoConfig.extra;
 
-// Firebase config from env
+console.log('Firebase Key:', FIREBASE_API_KEY); // ✅ This should now log your API key
+
 const firebaseConfig = {
   apiKey: FIREBASE_API_KEY,
   authDomain: FIREBASE_AUTH_DOMAIN,
@@ -27,23 +28,20 @@ const firebaseConfig = {
   measurementId: FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase only if not already initialized
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Optional: Only get analytics if supported (web only)
 let analytics;
 try {
   analytics = getAnalytics(app);
 } catch (e) {
-  // Ignore analytics error on native
+  // Ignore on native
 }
 
-// Use initializeAuth with AsyncStorage for React Native
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
 
-// Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 
 export { app, auth, db };
+
