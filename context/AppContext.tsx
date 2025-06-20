@@ -38,10 +38,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(authUser);
       if (authUser) {
         console.log('User authenticated:', authUser);
-        await refreshGroups();
+        await refreshGroups(authUser);
       } else {
         setGroups([]);
-        setCurrentGroup(null);
+        // setCurrentGroup(null);
         setExpenses([]);
       }
       setLoading(false);
@@ -56,14 +56,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentGroup]);
 
-  const refreshGroups = async () => {
-    console.log('Refreshing groups for user:', user);
-    if (!user) return;
+  const refreshGroups = async (authuser) => {
+    console.log('Refreshing groups for user:', authuser);
+    if (!authuser) return;
 
     try {
 
      console.log('Fetching groups for user')
-      const userGroups = await FirestoreService.getUserGroups(user.id);
+      const userGroups = await FirestoreService.getUserGroups(authuser.id);
      console.log('Fetched groups:', userGroups);
 
       setGroups(userGroups);
