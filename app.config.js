@@ -11,6 +11,7 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
+      bundleIdentifier: 'com.splitmate.app',
       supportsTablet: true,
     },
     android: {

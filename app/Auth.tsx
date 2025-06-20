@@ -30,9 +30,12 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const { refreshGroups } = useApp();
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '<YOUR_EXPO_CLIENT_ID>',
-    iosClientId: '<YOUR_IOS_CLIENT_ID>',
-    androidClientId: '<YOUR_ANDROID_CLIENT_ID>',
+    clientId:
+      '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
+    iosClientId:
+      '942853203229-pfho9ngff6hv7r8ou328lbk333gjlvgd.apps.googleusercontent.com',
+    androidClientId:
+      '942853203229-er6slg4d2jnrmib9agejiej2pe71cja3.apps.googleusercontent.com',
     webClientId:
       '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
   });
