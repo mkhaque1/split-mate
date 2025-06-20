@@ -8,7 +8,7 @@ import { User as UserType } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { DollarSign, Plus, User } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   RefreshControl,
@@ -21,24 +21,13 @@ import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
 
 export default function ExpensesScreen() {
-  const { user, currentGroup, expenses, refreshExpenses ,refreshGroups} = useApp();
+  const { user, currentGroup, expenses, refreshExpenses, refreshGroups } = useApp();
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
-console.log('user', user);
-  console.log('currentGroup', currentGroup);
-  console.log('expenses', expenses);
-  useEffect(() => {
-    if (!user) {
-      router.replace('/auth');
-      return;
-    }
-    refreshGroups()
-    refreshExpenses();
-    loadGroupMembers();
-  }, []);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  const loadGroupMembers = async () => {
+  const loadGroupMembers = useCallback(async () => {
     if (!currentGroup) return;
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
@@ -46,7 +35,32 @@ console.log('user', user);
     } catch (error) {
       console.error('Error loading group members:', error);
     }
-  };
+  }, [currentGroup]);
+
+  // Only one unified effect handles all loading logic safely
+  useEffect(() => {
+    if (!user) {
+      router.replace('/auth');
+      return;
+    }
+
+    if (!hasLoaded) {
+      const fetchData = async () => {
+        try {
+          await refreshGroups();
+          await refreshExpenses();
+
+          if (currentGroup) {
+            await loadGroupMembers();
+            setHasLoaded(true);
+          }
+        } catch (error) {
+          console.error('Error loading data:', error);
+        }
+      };
+      fetchData();
+    }
+  }, [user, currentGroup, hasLoaded, refreshGroups, refreshExpenses, loadGroupMembers]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -60,45 +74,40 @@ console.log('user', user);
     await refreshExpenses();
   };
 
+
+
+
+
   const handleDeleteExpense = async (expenseId: string) => {
-    Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
+  
             try {
               await FirestoreService.deleteExpense(expenseId);
               await refreshExpenses();
             } catch (error) {
               Alert.alert('Error', 'Failed to delete expense');
             }
-          },
-        },
-      ]
-    );
+       
   };
-
   const getUserName = (userId: string) => {
-    const member = groupMembers.find((m) => m.id === userId);
+    const member = groupMembers.find((m) => m?.id === userId);
     return member?.displayName || 'Unknown';
   };
 
-  if (!user || !currentGroup) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Expense...</Text>
-      </View>
-    );
-  }
+  // Don't conditionally return before hooks
+if (!user || !currentGroup) {
+  return (
+    <View style={styles.loadingContainer}>
+      <Text style={styles.loadingText}>Loading Expenses...</Text>
+    </View>
+  );
+}
 
-  const totalExpenses = CalculationService.getTotalExpenses(expenses);
-  const userPaidTotal = CalculationService.getUserExpenseTotal(expenses, user.id);
-  const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
-  const userBalance = userPaidTotal - userOwedTotal;
+// Only calculate these when user and currentGroup are guaranteed to exist
+const totalExpenses = CalculationService.getTotalExpenses(expenses);
+const userPaidTotal = CalculationService.getUserExpenseTotal(expenses, user.id);
+const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
+const userBalance = userPaidTotal - userOwedTotal;
+
 
   return (
     <View style={styles.container}>
@@ -119,7 +128,6 @@ console.log('user', user);
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Summary Cards */}
           <View style={styles.summaryRow}>
             <Card style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
@@ -151,7 +159,6 @@ console.log('user', user);
             </Card>
           </View>
 
-          {/* Add Expense Button */}
           <Button
             title="Add New Expense"
             icon={<Plus size={20} color="#ffffff" />}
@@ -159,10 +166,8 @@ console.log('user', user);
             style={styles.addButton}
           />
 
-          {/* Expenses List */}
           <View style={styles.expensesSection}>
             <Text style={styles.sectionTitle}>Recent Expenses</Text>
-
             {expenses.length === 0 ? (
               <Card style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>No expenses yet</Text>
@@ -173,25 +178,25 @@ console.log('user', user);
             ) : (
               expenses.map((expense) => (
                 <ExpenseItem
-                  key={expense.id}
+                  key={expense?.id}
                   expense={expense}
                   getUserName={getUserName}
                   currency={currentGroup.currency}
-                  onDelete={handleDeleteExpense}
+                 onDelete={handleDeleteExpense}
+
                 />
               ))
             )}
           </View>
         </ScrollView>
 
-        {/* Add Expense Modal */}
         <AddExpenseModal
           visible={showAddExpense}
           onClose={() => setShowAddExpense(false)}
           onExpenseAdded={handleExpenseAdded}
           groupMembers={groupMembers}
           currency={currentGroup.currency}
-          groupId={currentGroup.id}
+          groupId={currentGroup?.id}
         />
       </LinearGradient>
     </View>

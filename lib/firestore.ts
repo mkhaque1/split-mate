@@ -186,7 +186,7 @@ export class FirestoreService {
         } as User);
       }
     }
-
+console.log('Fetched users:', users);
     return users;
   }
 

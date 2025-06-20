@@ -1,6 +1,5 @@
 import { Expense } from '@/types';
 import { Calendar, Tag, Trash2, User, Users } from 'lucide-react-native';
-import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Card from './Card';
 
