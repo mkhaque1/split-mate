@@ -221,17 +221,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   header: {
-    padding: 24,
+    paddingBottom: 14,
     paddingTop: 60,
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   groupName: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
   },
@@ -255,12 +255,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#a1a1aa',
     fontFamily: 'Inter-Medium',
   },
   summaryAmount: {
-    fontSize: 20,
+    fontSize: 14,
     color: '#ffffff',
     fontFamily: 'Inter-Bold',
   },

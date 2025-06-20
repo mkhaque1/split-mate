@@ -3,7 +3,7 @@ import { FirestoreService } from '@/lib/firestore';
 import { ExpenseCategory, User } from '@/types';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DollarSign, Tag, Users, X } from 'lucide-react-native';
+import { Check, DollarSign, Tag, Users, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -283,7 +283,15 @@ export default function AddExpenseModal({
                       styles.radio,
                       paidBy === member.id && styles.radioSelected,
                     ]}
-                  />
+                  >
+                    {paidBy === member.id && (
+                      <Check
+                        size={16}
+                        color="#fff"
+                        style={{ alignSelf: 'center' }}
+                      />
+                    )}
+                  </View>
                 </Pressable>
               ))}
             </View>
@@ -327,7 +335,15 @@ export default function AddExpenseModal({
                       splitBetween.includes(member.id) &&
                         styles.checkboxSelected,
                     ]}
-                  />
+                  >
+                    {splitBetween.includes(member.id) && (
+                      <Check
+                        size={16}
+                        color="#fff"
+                        style={{ alignSelf: 'center' }}
+                      />
+                    )}
+                  </View>
                 </Pressable>
               ))}
             </View>
@@ -373,7 +389,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     color: '#ffffff',
     fontFamily: 'Inter-Bold',
   },
@@ -395,7 +411,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#ffffff',
     fontFamily: 'Inter-SemiBold',
   },
@@ -403,7 +419,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#ffffff',
     fontFamily: 'Inter-Medium',
     marginBottom: 8,
@@ -501,7 +517,7 @@ const styles = StyleSheet.create({
     borderColor: '#404040',
   },
   radioSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     borderColor: '#ffffff',
   },
   checkbox: {
@@ -512,7 +528,7 @@ const styles = StyleSheet.create({
     borderColor: '#404040',
   },
   checkboxSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     borderColor: '#ffffff',
   },
   splitInfo: {
@@ -527,8 +543,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    gap: 16,
-    padding: 24,
+    gap: 5,
+    padding: 18,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
   footerButton: {

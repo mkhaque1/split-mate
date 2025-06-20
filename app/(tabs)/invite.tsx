@@ -323,23 +323,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   header: {
-    padding: 24,
+    paddingBottom: 10,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 10,
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 10,
   },
   inviteCard: {
     backgroundColor: '#262626',

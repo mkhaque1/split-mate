@@ -360,30 +360,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   header: {
-    padding: 24,
+    paddingBottom: 10,
     paddingTop: 60,
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   groupName: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 10,
   },
   exportButton: {
     marginBottom: 24,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     marginBottom: 32,
   },
   statCard: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   statHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 5,
     marginBottom: 8,
   },
   statLabel: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   statAmount: {
-    fontSize: 18,
+    fontSize: 12,
     color: '#ffffff',
     fontFamily: 'Inter-Bold',
   },
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#ffffff',
     fontFamily: 'Inter-SemiBold',
     marginBottom: 16,
