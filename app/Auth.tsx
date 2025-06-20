@@ -33,7 +33,8 @@ export default function AuthScreen() {
     clientId: '<YOUR_EXPO_CLIENT_ID>',
     iosClientId: '<YOUR_IOS_CLIENT_ID>',
     androidClientId: '<YOUR_ANDROID_CLIENT_ID>',
-    webClientId: '<YOUR_WEB_CLIENT_ID>',
+    webClientId:
+      '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
   });
 
   // Auto-login if user is already authenticated
