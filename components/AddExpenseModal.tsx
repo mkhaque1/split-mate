@@ -112,7 +112,8 @@ export default function AddExpenseModal({
 
     setLoading(true);
     try {
-      await FirestoreService.createExpense({
+      // Build the expense object without undefined fields
+      const expenseData: any = {
         groupId,
         title: title.trim(),
         amount: numAmount,
@@ -120,9 +121,13 @@ export default function AddExpenseModal({
         category,
         paidBy,
         splitBetween,
-        description: description.trim() || undefined,
         date: new Date(),
-      });
+      };
+      if (description.trim()) {
+        expenseData.description = description.trim();
+      }
+
+      await FirestoreService.createExpense(expenseData);
 
       // Add success haptic feedback on mobile
       if (Platform.OS !== 'web') {

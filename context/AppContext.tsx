@@ -1,6 +1,8 @@
 import { AuthService } from '@/lib/auth';
+import { db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { Expense, Group, User } from '@/types';
+import { doc, updateDoc } from 'firebase/firestore';
 import {
   createContext,
   ReactNode,
@@ -15,7 +17,6 @@ interface AppContextType {
   currentGroup: Group | null;
   groups: Group[];
   expenses: Expense[];
-  currency: string;
   setCurrentGroup: (group: Group | null) => void;
   setCurrency: (currency: string) => void;
   refreshGroups: () => Promise<void>;
@@ -31,14 +32,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentGroup, setCurrentGroup] = useState<Group | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
       setUser(authUser);
       if (authUser) {
         console.log('User authenticated:', authUser);
-        await refreshGroups(authUser);
+        await refreshGroups();
       } else {
         setGroups([]);
         // setCurrentGroup(null);
@@ -56,22 +56,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentGroup]);
 
-  const refreshGroups = async (authuser) => {
-    console.log('Refreshing groups for user:', authuser);
-    if (!authuser) return;
+  const refreshGroups = async () => {
+    console.log('Refreshing groups for user:', user);
+    if (!user) return;
 
     try {
-
-     console.log('Fetching groups for user')
-      const userGroups = await FirestoreService.getUserGroups(authuser.id);
-     console.log('Fetched groups:', userGroups);
+      console.log('Fetching groups for user');
+      const userGroups = await FirestoreService.getUserGroups(user.id);
+      console.log('Fetched groups:', userGroups);
 
       setGroups(userGroups);
 
       // Set first group as current if none selected
       // if (!currentGroup && userGroups.length > 0) {
-        
-        setCurrentGroup(userGroups[0]);
+
+      setCurrentGroup(userGroups[0]);
       // }
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -91,6 +90,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setCurrency = async (currency: string) => {
+    if (!currentGroup) return;
+    await updateDoc(doc(db, 'groups', currentGroup.id), { currency });
+    await refreshGroups(user);
+  };
+
   const signOut = async () => {
     await AuthService.signOut();
     setUser(null);
@@ -107,7 +112,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentGroup,
         groups,
         expenses,
-        currency,
         setCurrentGroup,
         setCurrency,
         refreshGroups,

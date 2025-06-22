@@ -8,6 +8,7 @@ export default {
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'splitmate',
+    deepLinks: ['splitmate://', 'https://quick-split-together.vercel.app/'],
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {

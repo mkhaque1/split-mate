@@ -46,15 +46,16 @@ const CURRENCIES = [
   { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
   { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' },
 ];
 
 export default function SettingsScreen() {
-  const { user, currentGroup, currency, setCurrency, signOut, refreshGroups } =
-    useApp();
+  const { user, currentGroup, setCurrency, signOut, refreshGroups } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const currency = currentGroup?.currency || 'USD';
 
   useEffect(() => {
     if (!user) {
