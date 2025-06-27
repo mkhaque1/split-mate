@@ -107,7 +107,7 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const handleRemoveMember = (memberId: string, memberName: string) => {
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (memberId === user?.id) {
       Alert.alert('Error', 'You cannot remove yourself from the group');
       return;
@@ -128,10 +128,19 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // TODO: Implement member removal logic
+              // Remove member from Firestore group
+              const groupRef = doc(db, 'groups', currentGroup.id);
+              await updateDoc(groupRef, {
+                members: currentGroup.members.filter((id) => id !== memberId),
+              });
+
+              // Optionally, refresh group members in UI
+              await refreshGroups();
+              await loadGroupMembers();
+
               Alert.alert(
-                'Info',
-                'Member removal will be implemented in a future update'
+                'Success',
+                `${memberName} has been removed from the group.`
               );
             } catch (error) {
               Alert.alert('Error', 'Failed to remove member');
