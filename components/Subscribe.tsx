@@ -26,7 +26,7 @@ const Subscribe = ({ onClose }: { onClose: () => void }) => {
     <Modal animationType="slide" transparent={true} visible={true}>
       <View style={styles.overlay}>
         <LinearGradient
-          colors={['#B3EBFF', '#a1a1aa']}
+          colors={['#a1a1aa', '#a166f1', '#000']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.modal}

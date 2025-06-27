@@ -299,6 +299,9 @@ export default function InviteScreen() {
             </View>
           </Card>
         </ScrollView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Demo Banner Add</Text>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -467,5 +470,18 @@ const styles = StyleSheet.create({
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
     lineHeight: 20,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    padding: 16,
+    backgroundColor: '#1e1e1e',
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
   },
 });
