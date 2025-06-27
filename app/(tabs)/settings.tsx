@@ -3,6 +3,7 @@ import Button from '@/components/Button';
 import Card from '@/components/Card';
 import CurrencySelector from '@/components/CurrencySelector';
 import GradientText from '@/components/GradientText';
+import Subscribe from '@/components/Subscribe';
 import { useApp } from '@/context/AppContext';
 import { db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
@@ -55,6 +56,7 @@ export default function SettingsScreen() {
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showSubscribe, setShowSubscribe] = useState(false);
   const currency = currentGroup?.currency || 'USD';
 
   useEffect(() => {
@@ -332,6 +334,19 @@ export default function SettingsScreen() {
             </View>
           </Card>
 
+          {/* Remove Ads Card */}
+          <Card style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Remove Ads</Text>
+            </View>
+            <Button
+              title="Remove Ads"
+              variant="outline"
+              onPress={() => setShowSubscribe(true)}
+              style={{ marginTop: 8 }}
+            />
+          </Card>
+
           {/* Actions */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
@@ -366,6 +381,9 @@ export default function SettingsScreen() {
           onSelect={handleCurrencyChange}
           onClose={() => setShowCurrencySelector(false)}
         />
+
+        {/* Subscribe Modal */}
+        {showSubscribe && <Subscribe onClose={() => setShowSubscribe(false)} />}
       </LinearGradient>
     </View>
   );
