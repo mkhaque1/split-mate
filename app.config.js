@@ -22,6 +22,11 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: 'com.splitmate.app',
+      config: {
+        googleMobileAds: {
+          appId: 'ca-app-pub-8613339095164526~7201972596',
+        },
+      },
     },
     web: {
       bundler: 'metro',

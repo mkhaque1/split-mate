@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 const BANNER_ID = __DEV__
-  ? 'ca-app-pub-3940256099942544/6300978111' // Test Banner Ad Unit ID
+  ? 'ca-app-pub-3940256099942544/9214589741' // Test Banner Ad Unit ID
   : 'ca-app-pub-8613339095164526/4093158170'; //real Banner Ad Unit ID
 
 const INTERSTITIAL_ID = __DEV__
