@@ -1,4 +1,5 @@
 import GradientText from '@/components/GradientText'; // Use your existing GradientText component
+import { useApp } from '@/context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
@@ -21,6 +22,14 @@ const Subscribe = ({ onClose }: { onClose: () => void }) => {
   const [selectedPlan, setSelectedPlan] = useState<
     'monthly' | 'annual' | 'lifetime'
   >('lifetime');
+  const { setIsPro, setUserSelectedPlan } = useApp();
+
+  const handleContinue = () => {
+    setIsPro(true); // Mark user as pro
+    const planObj = plans.find((p) => p.key === selectedPlan);
+    setUserSelectedPlan(planObj || null);
+    onClose();
+  };
 
   return (
     <Modal animationType="slide" transparent={true} visible={true}>
@@ -81,7 +90,7 @@ const Subscribe = ({ onClose }: { onClose: () => void }) => {
           {/* Continue Button */}
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={() => console.log(`Selected: ${selectedPlan}`)}
+            onPress={handleContinue}
           >
             <LinearGradient
               colors={['#7366f1', '#a25caf']}

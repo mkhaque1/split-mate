@@ -22,6 +22,12 @@ interface AppContextType {
   refreshGroups: () => Promise<void>;
   refreshExpenses: () => Promise<void>;
   signOut: () => Promise<void>;
+  isPro: boolean;
+  setIsPro: (pro: boolean) => void;
+  userSelectedPlan: { key: string; label: string; price: string } | null;
+  setUserSelectedPlan: (
+    plan: { key: string; label: string; price: string } | null
+  ) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -32,6 +38,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentGroup, setCurrentGroup] = useState<Group | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isPro, setIsPro] = useState(false);
+  const [userSelectedPlan, setUserSelectedPlan] = useState<null | {
+    key: string;
+    label: string;
+    price: string;
+  }>(null);
 
   useEffect(() => {
     const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
@@ -117,6 +129,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshGroups,
         refreshExpenses,
         signOut,
+        isPro,
+        setIsPro,
+        userSelectedPlan,
+        setUserSelectedPlan,
       }}
     >
       {children}

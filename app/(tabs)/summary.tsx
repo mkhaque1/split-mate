@@ -216,6 +216,8 @@ export default function SummaryScreen() {
     );
   }
 
+  const { isPro } = useApp();
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
@@ -336,9 +338,11 @@ export default function SummaryScreen() {
             </View>
           )}
         </ScrollView>
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Demo Banner Add</Text>
-        </View>
+        {!isPro && (
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Demo Banner Add</Text>
+          </View>
+        )}
       </LinearGradient>
     </View>
   );

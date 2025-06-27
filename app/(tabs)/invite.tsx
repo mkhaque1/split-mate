@@ -29,6 +29,8 @@ export default function InviteScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
 
+  const { isPro } = useApp();
+
   useEffect(() => {
     if (!user) {
       router.replace('/auth');
@@ -299,9 +301,11 @@ export default function InviteScreen() {
             </View>
           </Card>
         </ScrollView>
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Demo Banner Add</Text>
-        </View>
+        {!isPro && (
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Demo Banner Add</Text>
+          </View>
+        )}
       </LinearGradient>
     </View>
   );

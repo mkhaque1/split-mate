@@ -59,6 +59,8 @@ export default function SettingsScreen() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const currency = currentGroup?.currency || 'USD';
 
+  const { isPro, userSelectedPlan } = useApp();
+
   useEffect(() => {
     if (!user) {
       router.replace('/auth');
@@ -335,17 +337,64 @@ export default function SettingsScreen() {
           </Card>
 
           {/* Remove Ads Card */}
-          <Card style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Remove Ads</Text>
-            </View>
-            <Button
-              title="Remove Ads"
-              variant="outline"
-              onPress={() => setShowSubscribe(true)}
-              style={{ marginTop: 8 }}
-            />
-          </Card>
+          {!isPro ? (
+            <Card style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Remove Ads</Text>
+              </View>
+              <Button
+                title="Remove Ads"
+                variant="outline"
+                onPress={() => setShowSubscribe(true)}
+                style={{ marginTop: 8 }}
+              />
+            </Card>
+          ) : (
+            <Card style={styles.sectionCard}>
+              <Text
+                style={{
+                  alignItems: 'center',
+                  fontSize: 16,
+                  color: '#fff',
+                  fontFamily: 'Inter-Regular',
+                  textAlign: 'center',
+                }}
+              >
+                Your Plan
+              </Text>
+              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                <Text
+                  style={{
+                    color: '#6366f1',
+                    fontSize: 16,
+                    fontFamily: 'Inter-Bold',
+                    marginBottom: 8,
+                  }}
+                >
+                  {userSelectedPlan?.label || 'Pro'}
+                </Text>
+                <Text
+                  style={{
+                    color: '#ffffff',
+                    fontSize: 16,
+                    fontFamily: 'Inter-Regular',
+                    marginBottom: 8,
+                  }}
+                >
+                  {userSelectedPlan?.price || ''}
+                </Text>
+                <Text
+                  style={{
+                    color: '#10b981',
+                    fontSize: 14,
+                    fontFamily: 'Inter-Bold',
+                  }}
+                >
+                  Active
+                </Text>
+              </View>
+            </Card>
+          )}
 
           {/* Actions */}
           <Card style={styles.sectionCard}>
