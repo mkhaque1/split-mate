@@ -1,8 +1,10 @@
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import GradientText from '@/components/GradientText';
+import Subscribe from '@/components/Subscribe';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
@@ -28,6 +30,7 @@ export default function InviteScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   const { isPro } = useApp();
 
@@ -304,6 +307,16 @@ export default function InviteScreen() {
         {!isPro && (
           <View style={styles.footer}>
             <Text style={styles.footerText}>Demo Banner Add</Text>
+            <Ionicons
+              name="close"
+              size={20}
+              color="#fff"
+              style={styles.closeAdIcon}
+              onPress={() => setShowSubscribe(true)}
+            />
+            {showSubscribe && (
+              <Subscribe onClose={() => setShowSubscribe(false)} />
+            )}
           </View>
         )}
       </LinearGradient>
@@ -475,11 +488,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     lineHeight: 20,
   },
+  closeAdIcon: {
+    position: 'absolute',
+    right: 0,
+    top: -10,
+    padding: 8,
+    zIndex: 10,
+  },
   footer: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    padding: 16,
+    height: 60,
+    padding: 10,
     backgroundColor: '#1e1e1e',
     alignItems: 'center',
   },

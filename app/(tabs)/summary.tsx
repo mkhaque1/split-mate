@@ -2,10 +2,12 @@ import BalanceItem from '@/components/BalanceItem';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import GradientText from '@/components/GradientText';
+import Subscribe from '@/components/Subscribe';
 import { useApp } from '@/context/AppContext';
 import { CalculationService } from '@/lib/calculation';
 import { FirestoreService } from '@/lib/firestore';
 import { Balance, User as UserType } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Print from 'expo-print';
 import { router } from 'expo-router';
@@ -27,6 +29,7 @@ export default function SummaryScreen() {
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -341,6 +344,16 @@ export default function SummaryScreen() {
         {!isPro && (
           <View style={styles.footer}>
             <Text style={styles.footerText}>Demo Banner Add</Text>
+            <Ionicons
+              name="close"
+              size={20}
+              color="#fff"
+              style={styles.closeAdIcon}
+              onPress={() => setShowSubscribe(true)}
+            />
+            {showSubscribe && (
+              <Subscribe onClose={() => setShowSubscribe(false)} />
+            )}
           </View>
         )}
       </LinearGradient>
@@ -475,11 +488,19 @@ const styles = StyleSheet.create({
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
   },
+  closeAdIcon: {
+    position: 'absolute',
+    right: 16,
+    top: -10,
+    padding: 8,
+    zIndex: 10,
+  },
   footer: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    padding: 16,
+    height: 60,
+    padding: 10,
     backgroundColor: '#1e1e1e',
     alignItems: 'center',
   },
