@@ -30,10 +30,12 @@ import {
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -57,6 +59,7 @@ export default function SettingsScreen() {
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const currency = currentGroup?.currency || 'USD';
 
   const { isPro, userSelectedPlan } = useApp();
@@ -412,6 +415,22 @@ export default function SettingsScreen() {
             />
           </Card>
 
+          {/* Privacy Policy Card */}
+          <Card style={styles.sectionCard}>
+            <TouchableOpacity onPress={() => setShowPrivacy(true)}>
+              <Text
+                style={{
+                  color: '#fff',
+                  fontFamily: 'Inter-SemiBold',
+                  fontSize: 14,
+                  textAlign: 'center',
+                }}
+              >
+                Privacy Policy
+              </Text>
+            </TouchableOpacity>
+          </Card>
+
           {/* App Info */}
           <Card style={styles.sectionCard}>
             <Text style={styles.appName}>SplitMate</Text>
@@ -433,6 +452,48 @@ export default function SettingsScreen() {
 
         {/* Subscribe Modal */}
         {showSubscribe && <Subscribe onClose={() => setShowSubscribe(false)} />}
+
+        {/* Privacy Policy Modal */}
+        <Modal visible={showPrivacy} animationType="slide" transparent>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: '#18181b',
+                borderRadius: 16,
+                padding: 24,
+                maxHeight: '80%',
+                width: '100%',
+              }}
+            >
+              <ScrollView>
+                <Text
+                  style={{
+                    color: '#fff',
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 14,
+                    marginBottom: 16,
+                    textAlign: 'left',
+                  }}
+                >
+                  {/* Replace this with your actual privacy policy legal text */}
+                  Privacy Policy Your privacy is important to us. This app does
+                  not share your personal information with third parties. All
+                  data is securely stored and only used to provide app
+                  functionality. For more details, please contact support.
+                </Text>
+                <Button title="Close" onPress={() => setShowPrivacy(false)} />
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </View>
   );
