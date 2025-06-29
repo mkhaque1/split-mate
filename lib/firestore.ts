@@ -9,6 +9,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
@@ -186,8 +187,16 @@ export class FirestoreService {
         } as User);
       }
     }
-console.log('Fetched users:', users);
+    console.log('Fetched users:', users);
     return users;
+  }
+
+  static async setUserMarketingConsent(userId: string, consent: boolean) {
+    await setDoc(
+      doc(db, 'users', userId),
+      { marketingConsent: consent },
+      { merge: true }
+    );
   }
 
   // Real-time listeners

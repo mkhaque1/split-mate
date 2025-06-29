@@ -1,5 +1,6 @@
 import Button from '@/components/Button';
 import GradientText from '@/components/GradientText';
+import PrivacyModal from '@/components/PrivacyModal';
 import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
@@ -12,11 +13,13 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -29,6 +32,9 @@ export default function AuthScreen() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const { refreshGroups } = useApp();
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId:
       '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
@@ -89,19 +95,28 @@ export default function AuthScreen() {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
+    if (isSignUp && !acceptedPrivacy) {
+      Alert.alert('Error', 'You must accept the Privacy Policy to continue.');
+      return;
+    }
     setLoading(true);
     try {
       if (isSignUp) {
         const user = await AuthService.signUp(email, password, displayName);
 
-        // // Create a default group for the user
+        // Create a default group for the user
         await FirestoreService.createGroup({
           name: `${displayName}'s Group`,
           members: [user.id],
           createdBy: user.id,
           currency: 'USD',
         });
+
+        // Store marketing consent in Firestore
+        await FirestoreService.setUserMarketingConsent(
+          user.id,
+          acceptMarketing
+        );
 
         await refreshGroups();
       } else {
@@ -152,13 +167,15 @@ export default function AuthScreen() {
               />
             </View>
 
-            <Button
-              title="Continue with Google"
-              onPress={() => promptAsync()}
-              loading={loading}
-              style={{ marginBottom: 16 }}
-              disabled={!request}
-            />
+            {!isSignUp && (
+              <Button
+                title="Continue with Google"
+                onPress={() => promptAsync()}
+                loading={loading}
+                style={{ marginBottom: 16 }}
+                disabled={!request}
+              />
+            )}
 
             {isSignUp && (
               <View style={styles.inputContainer}>
@@ -199,6 +216,95 @@ export default function AuthScreen() {
               />
             </View>
 
+            {isSignUp && (
+              <>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 12,
+                  }}
+                  onPress={() => setAcceptedPrivacy(!acceptedPrivacy)}
+                >
+                  <View
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      borderWidth: 2,
+                      borderColor: '#6366f1',
+                      backgroundColor: acceptedPrivacy
+                        ? '#6366f1'
+                        : 'transparent',
+                      marginRight: 10,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {acceptedPrivacy && (
+                      <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
+                    )}
+                  </View>
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontFamily: 'Inter-Regular',
+                      fontSize: 14,
+                    }}
+                  >
+                    I have read and accept the{' '}
+                    <Text
+                      style={{
+                        color: '#6366f1',
+                        textDecorationLine: 'underline',
+                      }}
+                      onPress={() => setShowPrivacy(true)}
+                    >
+                      Privacy Policy
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 20,
+                  }}
+                  onPress={() => setAcceptMarketing(!acceptMarketing)}
+                >
+                  <View
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      borderWidth: 2,
+                      borderColor: '#6366f1',
+                      backgroundColor: acceptMarketing
+                        ? '#6366f1'
+                        : 'transparent',
+                      marginRight: 10,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {acceptMarketing && (
+                      <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
+                    )}
+                  </View>
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontFamily: 'Inter-Regular',
+                      fontSize: 14,
+                    }}
+                  >
+                    I want to receive marketing emails and future updates
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
             <Button
               title={isSignUp ? 'Create Account' : 'Sign In'}
               onPress={handleAuth}
@@ -207,6 +313,30 @@ export default function AuthScreen() {
             />
           </View>
         </ScrollView>
+        {!isSignUp && (
+          <View style={styles.header}>
+            <Text style={styles.footerText}>
+              By continuing, you agree to our{' '}
+              <Text
+                style={{ color: '#6366f1', textDecorationLine: 'underline' }}
+                onPress={() => Linking.openURL('https://pyonet.com')}
+              >
+                Terms of Service
+              </Text>
+              and{' '}
+              <Text
+                style={{ color: '#6366f1', textDecorationLine: 'underline' }}
+                onPress={() => setShowPrivacy(true)}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </View>
+        )}
+        <PrivacyModal
+          visible={showPrivacy}
+          onClose={() => setShowPrivacy(false)}
+        />
       </LinearGradient>
     </KeyboardAvoidingView>
   );
@@ -222,7 +352,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: 10,
   },
   header: {
     alignItems: 'center',
@@ -277,5 +407,12 @@ const styles = StyleSheet.create({
   },
   authButton: {
     marginTop: 16,
+  },
+  footerText: {
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Regular',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
