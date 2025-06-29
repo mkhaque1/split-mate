@@ -7,19 +7,24 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'rgba(34,34,34,0.15)',
+          backgroundColor: '#1e1e1e',
           borderTopWidth: 1,
           borderTopColor: '#f1f5f9',
-          paddingTop: 2,
-          paddingBottom: 4,
+          paddingTop: 0,
+          paddingBottom: 0,
           height: 80,
         },
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarIconStyle: {
+          marginTop: 5,
+          marginBottom: 0,
+        },
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#6474ff',
+
         tabBarLabelStyle: {
           fontFamily: 'Inter-Medium',
           fontSize: 10,
-          marginTop: 4,
+          marginTop: 5,
         },
       }}
     >
