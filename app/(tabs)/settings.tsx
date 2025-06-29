@@ -489,7 +489,11 @@ export default function SettingsScreen() {
                   data is securely stored and only used to provide app
                   functionality. For more details, please contact support.
                 </Text>
-                <Button title="Close" onPress={() => setShowPrivacy(false)} />
+                <Button
+                  size="sm"
+                  title="Close"
+                  onPress={() => setShowPrivacy(false)}
+                />
               </ScrollView>
             </View>
           </View>
