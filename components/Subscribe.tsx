@@ -1,9 +1,12 @@
 import GradientText from '@/components/GradientText'; // Use your existing GradientText component
 import { useApp } from '@/context/AppContext';
+import { FirestoreService } from '@/lib/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -18,18 +21,101 @@ const plans = [
   { key: 'lifetime', label: 'Lifetime', price: '$25.99 / Lifetime' },
 ];
 
+
 const Subscribe = ({ onClose }: { onClose: () => void }) => {
+  const [loading, setLoading] = useState(false);
+  
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const url = 'https://split-node-server.vercel.app/create-subscription-session';
   const [selectedPlan, setSelectedPlan] = useState<
     'monthly' | 'annual' | 'lifetime'
   >('lifetime');
-  const { setIsPro, setUserSelectedPlan } = useApp();
+  const { setIsPro, setUserSelectedPlan, user } = useApp();
+  console.log('User in Subscribe:', user);
 
-  const handleContinue = () => {
-    setIsPro(true); // Mark user as pro
-    const planObj = plans.find((p) => p.key === selectedPlan);
-    setUserSelectedPlan(planObj || null);
-    onClose();
+  const handleContinue = async () => {
+await handlePayment()
+    console.log('Selected Plan:', selectedPlan);
+  
+    // setIsPro(true); 
+    // const planObj = plans.find((p) => p.key === selectedPlan);
+    // setUserSelectedPlan(planObj || null);
+    // onClose();
   };
+
+const handlePayment = async () => {
+  setLoading(true);
+  console.log('Starting payment for plan:', selectedPlan);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: selectedPlan }),
+    });
+
+    if (!response.ok) throw new Error('Failed to create payment intent');
+
+    const data = await response.json();
+    console.log('Stripe response:', data);
+
+    const { paymentIntent: clientSecret, ephemeralKey, customer } = data;
+
+    const { error: initError } = await initPaymentSheet({
+      merchantDisplayName: 'SplitMate',
+      customerId: customer,
+      customerEphemeralKeySecret: ephemeralKey,
+      paymentIntentClientSecret: clientSecret,
+      allowsDelayedPaymentMethods: true,
+    });
+
+    if (initError) throw initError;
+
+    const { error: paymentError } = await presentPaymentSheet();
+    if (paymentError) throw paymentError;
+
+
+  // Step 4: Build subscription data
+const planLabel =
+  selectedPlan === 'monthly'
+    ? 'Monthly Plan'
+    : selectedPlan === 'annual'
+    ? 'Annual Plan'
+    : 'Lifetime Plan';
+
+const now = new Date();
+const planExpiry =
+  selectedPlan === 'monthly'
+    ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    : selectedPlan === 'annual'
+    ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    : 'lifetime';
+
+const Plan = selectedPlan;
+const UserPlan = {
+  Plan: selectedPlan,
+  label: planLabel,
+  price: plans.find((p) => p.key === selectedPlan)?.price || '',
+};
+
+const PlanStart = now.toISOString();
+const PlanExpiry = planExpiry;
+
+await FirestoreService.UpdatePlan(user?.id, true, Plan, PlanStart, PlanExpiry,UserPlan);
+setIsPro(true);
+setUserSelectedPlan({
+  key: selectedPlan,
+  label: planLabel,
+  price: plans.find((p) => p.key === selectedPlan)?.price || '',
+});
+    Alert.alert('Payment Successful', 'Thank you for subscribing!', [{ text: 'OK', onPress: onClose }]);
+  } catch (err) {
+    console.error('Payment failed:', err);
+    Alert.alert('Payment Error', err.message || 'Something went wrong during payment.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Modal animationType="slide" transparent={true} visible={true}>

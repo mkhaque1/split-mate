@@ -53,7 +53,8 @@ const CURRENCIES = [
 ];
 
 export default function SettingsScreen() {
-  const { user, currentGroup, setCurrency, signOut, refreshGroups } = useApp();
+  const { user, currentGroup, setCurrency, signOut, refreshGroups ,setIsPro,} = useApp();
+  
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
@@ -62,7 +63,8 @@ export default function SettingsScreen() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const currency = currentGroup?.currency || 'USD';
 
-  const { isPro, userSelectedPlan } = useApp();
+  const { isPro, userSelectedPlan ,setUserSelectedPlan} = useApp();
+  console.log('User in Settings:', isPro);
 
   useEffect(() => {
     if (!user) {
@@ -207,6 +209,34 @@ export default function SettingsScreen() {
   const selectedCurrency =
     CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
 
+
+    const handleRemoveSubscription = async () => {
+Alert.alert(
+      'Remove Subscription',
+      'Are you sure you want to remove your subscription?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await FirestoreService.UpdatePlan(user.id, false, '', '', '',null);
+              setUserSelectedPlan(null);
+              setIsPro(false);
+              (null);
+              Alert.alert('Subscription Removed', 'Your subscription has been removed successfully.');
+            } catch (error) {
+              console.error('Error removing subscription:', error);
+              Alert.alert('Error', 'Failed to remove subscription.');
+            }
+          },
+        },
+
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
@@ -339,7 +369,7 @@ export default function SettingsScreen() {
             </View>
           </Card>
 
-          {/* Remove Ads Card */}
+          {/* Remove  Card */}
           {!isPro ? (
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
@@ -398,6 +428,14 @@ export default function SettingsScreen() {
               </View>
             </Card>
           )}
+
+
+          {
+            isPro &&
+            <TouchableOpacity onPress={()=>handleRemoveSubscription()} style={styles.managePlanButton}>
+              <Text style={styles.managePlanButtonText}>Remove Subscription</Text>
+            </TouchableOpacity>
+          }
 
           {/* Actions */}
           <Card style={styles.sectionCard}>
@@ -521,6 +559,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Regular',
   },
+  managePlanButton: {
+    backgroundColor: '#f86f6fff',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    width:'95%',
+    alignSelf: 'center',
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  managePlanButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+
   header: {
     backgroundColor: 'Gradient',
     paddingBottom: 10,

@@ -1,10 +1,8 @@
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import GradientText from '@/components/GradientText';
-import Subscribe from '@/components/Subscribe';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
-import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
@@ -22,8 +20,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {
+  BannerAd,
+  BannerAdSize,
+  TestIds,
+} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
-
 export default function InviteScreen() {
   const { user, currentGroup, refreshGroups } = useApp();
   const [email, setEmail] = useState('');
@@ -305,19 +307,13 @@ export default function InviteScreen() {
           </Card>
         </ScrollView>
         {!isPro && (
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Demo Banner Add</Text>
-            <Ionicons
-              name="close"
-              size={20}
-              color="#fff"
-              style={styles.closeAdIcon}
-              onPress={() => setShowSubscribe(true)}
-            />
-            {showSubscribe && (
-              <Subscribe onClose={() => setShowSubscribe(false)} />
-            )}
-          </View>
+           <BannerAd
+                 unitId={TestIds.BANNER} // Replace with your actual ad unit ID in production
+                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                 requestOptions={{
+                   requestNonPersonalizedAdsOnly: true,
+                 }}
+               />
         )}
       </LinearGradient>
     </View>

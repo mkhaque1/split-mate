@@ -14,6 +14,9 @@ export default {
     ios: {
       bundleIdentifier: 'com.splitmate.app',
       supportsTablet: true,
+      config: {
+        googleMobileAdsAppId: 'ca-app-pub-8613339095164526~7201972596',
+      },
     },
     android: {
       adaptiveIcon: {

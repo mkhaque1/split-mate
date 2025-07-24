@@ -18,6 +18,7 @@ import {
 import { db } from './firebase';
 
 export class FirestoreService {
+  // const [userSelectedPlan]
   // Groups
   static async createGroup(
     groupData: Omit<Group, 'id' | 'createdAt'>
@@ -187,7 +188,6 @@ export class FirestoreService {
         } as User);
       }
     }
-    console.log('Fetched users:', users);
     return users;
   }
 
@@ -195,6 +195,20 @@ export class FirestoreService {
     await setDoc(
       doc(db, 'users', userId),
       { marketingConsent: consent },
+      { merge: true }
+    );
+  }
+
+   static async UpdatePlan(userId: string, consent: boolean, Plan: string, PlanStart: string, PlanExpiry: string,UserPlan: any) {
+    await setDoc(
+      doc(db, 'users', userId),
+      { isPro: consent,
+        Plan: Plan || '',
+        updatedAt: Timestamp.now(),
+        PlanExpiry: PlanExpiry || '',
+        PlanStart: PlanStart || '',
+        UserPlan: UserPlan || ''
+      },
       { merge: true }
     );
   }

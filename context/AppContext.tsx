@@ -10,6 +10,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { Alert } from 'react-native';
 
 interface AppContextType {
   user: User | null;
@@ -45,22 +46,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     price: string;
   }>(null);
 
-  useEffect(() => {
-    const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
-      setUser(authUser);
-      if (authUser) {
-        console.log('User authenticated:', authUser);
-        await refreshGroups();
-      } else {
-        setGroups([]);
-        // setCurrentGroup(null);
-        setExpenses([]);
-      }
-      setLoading(false);
-    });
+useEffect(() => {
+  const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
+    setUser(authUser);
+    setLoading(true);
 
-    return unsubscribe;
-  }, []);
+    if (authUser) {
+      console.log('User authenticated:', authUser);
+
+      const currentDate = new Date().toISOString().split('T')[0];
+      const planExpiry = authUser.PlanExpiry || null;
+
+
+      if (planExpiry === currentDate || currentDate > planExpiry) {
+        // Plan expired today
+        console.log('User plan expired today, updating to free plan');
+        Alert.alert(
+          'Plan Expired',
+          'Your subscription has expired. You have been downgraded to the free plan.',
+        )
+        setIsPro(false);
+        setUserSelectedPlan(null);
+        await FirestoreService.UpdatePlan(
+          authUser.id,
+          false,
+          '',
+          '',
+          '',
+          null
+        );
+      } else {
+       console.log('User plan still valid');
+        setIsPro(authUser.isPro || false);
+        setUserSelectedPlan(authUser.UserPlan || null);
+      }
+
+      await refreshGroups();
+    } else {
+      setUserSelectedPlan(null);
+      setIsPro(false);
+      setGroups([]);
+      setExpenses([]);
+    }
+
+    setLoading(false);
+  });
+
+  return unsubscribe;
+}, []);
+
 
   useEffect(() => {
     if (currentGroup) {

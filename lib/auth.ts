@@ -106,6 +106,10 @@ export class AuthService {
             id: firebaseUser.uid,
             email: firebaseUser.email!,
             displayName: firebaseUser.displayName || '',
+            Plan:firebaseUser.Plan || '',
+            PlanStart:firebaseUser.PlanStart || '',
+            PlanExpiry:firebaseUser.PlanExpiry || '',
+            isPro: firebaseUser.isPro || false,
             // avatar: firebaseUser.photoURL || undefined,
             ...userDoc.data(),
           });

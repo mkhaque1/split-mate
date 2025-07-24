@@ -2,6 +2,11 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  isPro: boolean;
+  Plan?: string;
+  PlanStart?: string;
+  PlanExpiry?: string;
+  
 
 }
 

@@ -1,6 +1,6 @@
-import { AdMobBanner, AdMobInterstitial } from 'expo-ads-admob';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { AdMobBanner, AdMobInterstitial } from 'react-native-google-mobile-ads';
 
 const BANNER_ID = __DEV__
   ? 'ca-app-pub-3940256099942544/9214589741' // Test Banner Ad Unit ID
