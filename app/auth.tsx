@@ -121,10 +121,16 @@ export default function AuthScreen() {
         await refreshGroups();
       } else {
         await AuthService.signIn(email, password);
-        await refreshGroups();
+    
+
+
       }
 
-      router.replace('/(tabs)');
+      setTimeout(() => {
+              router.replace('/(tabs)');
+      }, 2000);
+setLoading(false);
+    
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -333,10 +339,14 @@ export default function AuthScreen() {
             </Text>
           </View>
         )}
-        <PrivacyModal
-          visible={showPrivacy}
-          onClose={() => setShowPrivacy(false)}
-        />
+{showPrivacy && (
+  <PrivacyModal
+    visible={true}
+    onClose={() => setShowPrivacy(false)}
+  />
+)}
+
+
       </LinearGradient>
     </KeyboardAvoidingView>
   );

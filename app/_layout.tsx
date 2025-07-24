@@ -10,11 +10,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import {
   MobileAds
 } from 'react-native-google-mobile-ads';
 import { AppProvider } from '../context/AppContext';
 import { useFrameworkReady } from '../hooks/useFramewrokReady';
+LogBox.ignoreAllLogs();
 SplashScreen.preventAutoHideAsync();
   useEffect(() => {
     const initializeAds = async () => {
