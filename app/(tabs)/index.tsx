@@ -17,16 +17,28 @@ import {
   Text,
   View,
 } from 'react-native';
+import {
+  AdEventType,
+  BannerAd,
+  BannerAdSize,
+  InterstitialAd,
+  TestIds,
+} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
+
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+  requestNonPersonalizedAdsOnly: true,
+});
 
 export default function ExpensesScreen() {
   const { user, currentGroup, expenses, refreshExpenses, refreshGroups } =
     useApp();
-  const [showAddExpense, setShowAddExpense] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const { isPro } = useApp();
+  const [showAddExpense, setShowAddExpense] = useState(false);
 
   const loadGroupMembers = useCallback(async () => {
     if (!currentGroup) return;
@@ -113,6 +125,39 @@ export default function ExpensesScreen() {
   const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
   const userBalance = userPaidTotal - userOwedTotal;
 
+  // Show interstitial ad before opening AddExpenseModal
+  const handleShowAddExpense = () => {
+    if (isPro) {
+      setShowAddExpense(true);
+      return;
+    }
+    interstitial.load();
+    const adListener = interstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        interstitial.show();
+      }
+    );
+    const closeListener = interstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setShowAddExpense(true);
+        adListener();
+        closeListener();
+      }
+    );
+    // If ad fails to load, open modal anyway
+    const errorListener = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      () => {
+        setShowAddExpense(true);
+        adListener();
+        closeListener();
+        errorListener();
+      }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
@@ -166,7 +211,7 @@ export default function ExpensesScreen() {
           <Button
             title="Add New Expense"
             icon={<Plus size={20} color="#ffffff" />}
-            onPress={() => setShowAddExpense(true)}
+            onPress={handleShowAddExpense}
             style={styles.addButton}
           />
 
@@ -197,10 +242,23 @@ export default function ExpensesScreen() {
           visible={showAddExpense}
           onClose={() => setShowAddExpense(false)}
           onExpenseAdded={handleExpenseAdded}
-          groupMembers={groupMembers} // <-- make sure this includes new members
+          groupMembers={groupMembers}
           currency={currentGroup.currency}
           groupId={currentGroup?.id}
         />
+
+        {/* Fixed bottom ad, like summary.tsx */}
+        {!isPro && (
+          <View style={styles.footer}>
+            <BannerAd
+              unitId={TestIds.BANNER} // Replace with your actual ad unit ID in production
+              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+              requestOptions={{
+                requestNonPersonalizedAdsOnly: true,
+              }}
+            />
+          </View>
+        )}
       </LinearGradient>
     </View>
   );
@@ -291,5 +349,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: 60,
+    padding: 10,
+    backgroundColor: '#1e1e1e',
+    alignItems: 'center',
   },
 });

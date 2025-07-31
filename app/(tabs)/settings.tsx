@@ -38,6 +38,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {
+  AdEventType,
+  InterstitialAd,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+  requestNonPersonalizedAdsOnly: true,
+});
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -53,8 +62,9 @@ const CURRENCIES = [
 ];
 
 export default function SettingsScreen() {
-  const { user, currentGroup, setCurrency, signOut, refreshGroups ,setIsPro,} = useApp();
-  
+  const { user, currentGroup, setCurrency, signOut, refreshGroups, setIsPro } =
+    useApp();
+
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
@@ -63,7 +73,7 @@ export default function SettingsScreen() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const currency = currentGroup?.currency || 'USD';
 
-  const { isPro, userSelectedPlan ,setUserSelectedPlan} = useApp();
+  const { isPro, userSelectedPlan, setUserSelectedPlan } = useApp();
   console.log('User in Settings:', isPro);
 
   useEffect(() => {
@@ -209,9 +219,8 @@ export default function SettingsScreen() {
   const selectedCurrency =
     CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
 
-
-    const handleRemoveSubscription = async () => {
-Alert.alert(
+  const handleRemoveSubscription = async () => {
+    Alert.alert(
       'Remove Subscription',
       'Are you sure you want to remove your subscription?',
       [
@@ -221,19 +230,61 @@ Alert.alert(
           style: 'destructive',
           onPress: async () => {
             try {
-              await FirestoreService.UpdatePlan(user.id, false, '', '', '',null);
+              await FirestoreService.UpdatePlan(
+                user.id,
+                false,
+                '',
+                '',
+                '',
+                null
+              );
               setUserSelectedPlan(null);
               setIsPro(false);
-              (null);
-              Alert.alert('Subscription Removed', 'Your subscription has been removed successfully.');
+              null;
+              Alert.alert(
+                'Subscription Removed',
+                'Your subscription has been removed successfully.'
+              );
             } catch (error) {
               console.error('Error removing subscription:', error);
               Alert.alert('Error', 'Failed to remove subscription.');
             }
           },
         },
-
       ]
+    );
+  };
+
+  // Show interstitial ad before opening AddMemberModal
+  const handleShowAddMember = () => {
+    if (isPro) {
+      setShowAddMemberModal(true);
+      return;
+    }
+    interstitial.load();
+    const adListener = interstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        interstitial.show();
+      }
+    );
+    const closeListener = interstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setShowAddMemberModal(true);
+        adListener();
+        closeListener();
+      }
+    );
+    // If ad fails to load, open modal anyway
+    const errorListener = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      () => {
+        setShowAddMemberModal(true);
+        adListener();
+        closeListener();
+        errorListener();
+      }
     );
   };
 
@@ -357,7 +408,7 @@ Alert.alert(
                   title="Add Members Manually?"
                   variant="outline"
                   size="sm"
-                  onPress={() => setShowAddMemberModal(true)}
+                  onPress={handleShowAddMember}
                   style={{ marginTop: 18 }}
                 />
               </View>
@@ -429,13 +480,16 @@ Alert.alert(
             </Card>
           )}
 
-
-          {
-            isPro &&
-            <TouchableOpacity onPress={()=>handleRemoveSubscription()} style={styles.managePlanButton}>
-              <Text style={styles.managePlanButtonText}>Remove Subscription</Text>
+          {isPro && (
+            <TouchableOpacity
+              onPress={() => handleRemoveSubscription()}
+              style={styles.managePlanButton}
+            >
+              <Text style={styles.managePlanButtonText}>
+                Remove Subscription
+              </Text>
             </TouchableOpacity>
-          }
+          )}
 
           {/* Actions */}
           <Card style={styles.sectionCard}>
@@ -563,7 +617,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f86f6fff',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    width:'95%',
+    width: '95%',
     alignSelf: 'center',
     borderRadius: 8,
     alignItems: 'center',
