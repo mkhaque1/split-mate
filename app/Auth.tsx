@@ -121,10 +121,12 @@ export default function AuthScreen() {
         await refreshGroups();
       } else {
         await AuthService.signIn(email, password);
-        await refreshGroups();
       }
 
-      router.replace('/(tabs)');
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 2000);
+      setLoading(false);
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -316,13 +318,13 @@ export default function AuthScreen() {
         {!isSignUp && (
           <View style={styles.header}>
             <Text style={styles.footerText}>
-              By continuing, you agree to our{' '}
+              By continuing, you agree to our{'\n'}
               <Text
                 style={{ color: '#6366f1', textDecorationLine: 'underline' }}
                 onPress={() => Linking.openURL('https://pyonet.com')}
               >
                 Terms of Service
-              </Text>
+              </Text>{' '}
               and{' '}
               <Text
                 style={{ color: '#6366f1', textDecorationLine: 'underline' }}
@@ -333,10 +335,9 @@ export default function AuthScreen() {
             </Text>
           </View>
         )}
-        <PrivacyModal
-          visible={showPrivacy}
-          onClose={() => setShowPrivacy(false)}
-        />
+        {showPrivacy && (
+          <PrivacyModal visible={true} onClose={() => setShowPrivacy(false)} />
+        )}
       </LinearGradient>
     </KeyboardAvoidingView>
   );
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    width: '100%',
+    width: '90%',
     maxWidth: 400,
     alignSelf: 'center',
   },
