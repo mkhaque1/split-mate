@@ -22,6 +22,7 @@ import {
 import {
   DollarSign,
   LogOut,
+  Pencil,
   Settings as SettingsIcon,
   Trash2,
   User,
@@ -35,6 +36,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -71,6 +73,8 @@ export default function SettingsScreen() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const currency = currentGroup?.currency || 'USD';
 
   const { isPro, userSelectedPlan, setUserSelectedPlan } = useApp();
@@ -208,6 +212,24 @@ export default function SettingsScreen() {
     Alert.alert('Success', 'Member added to the group!');
   };
 
+  const handleSaveName = async () => {
+    if (!newDisplayName.trim()) {
+      Alert.alert('Error', 'Name cannot be empty');
+      return;
+    }
+    try {
+      // Update Firestore
+      const userRef = doc(db, 'users', user.id);
+      await updateDoc(userRef, { displayName: newDisplayName.trim() });
+      // Optionally update local user state if needed
+      user.displayName = newDisplayName.trim();
+      setEditingName(false);
+      Alert.alert('Success', 'Name updated successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update name');
+    }
+  };
+
   if (!user || !currentGroup) {
     return (
       <View style={styles.loadingContainer}>
@@ -322,7 +344,71 @@ export default function SettingsScreen() {
               </View>
 
               <View style={styles.userDetails}>
-                <Text style={styles.userName}>{user.displayName}</Text>
+                {editingName ? (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <TextInput
+                      style={{
+                        backgroundColor: '#262626',
+                        color: '#fff',
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 18,
+                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        minWidth: 120,
+                      }}
+                      value={newDisplayName}
+                      onChangeText={setNewDisplayName}
+                      autoFocus
+                    />
+                    <TouchableOpacity onPress={handleSaveName}>
+                      <Text
+                        style={{
+                          color: '#10b981',
+                          fontFamily: 'Inter-Bold',
+                          fontSize: 16,
+                        }}
+                      >
+                        Save
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingName(false);
+                        setNewDisplayName(user.displayName);
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#ef4444',
+                          fontFamily: 'Inter-Bold',
+                          fontSize: 16,
+                        }}
+                      >
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Text style={styles.userName}>{user.displayName}</Text>
+                    <TouchableOpacity onPress={() => setEditingName(true)}>
+                      <Pencil size={18} color="#6366f1" />
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <Text style={styles.userEmail}>{user.email}</Text>
               </View>
             </View>
