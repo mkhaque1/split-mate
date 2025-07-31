@@ -169,7 +169,7 @@ export default function AuthScreen() {
               />
             </View>
 
-            {!isSignUp && (
+            {/* {!isSignUp && (
               <Button
                 title="Continue with Google"
                 onPress={() => promptAsync()}
@@ -177,7 +177,7 @@ export default function AuthScreen() {
                 style={{ marginBottom: 16 }}
                 disabled={!request}
               />
-            )}
+            )} */}
 
             {isSignUp && (
               <View style={styles.inputContainer}>
