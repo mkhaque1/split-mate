@@ -121,16 +121,12 @@ export default function AuthScreen() {
         await refreshGroups();
       } else {
         await AuthService.signIn(email, password);
-    
-
-
       }
 
       setTimeout(() => {
-              router.replace('/(tabs)');
+        router.replace('/(tabs)');
       }, 2000);
-setLoading(false);
-    
+      setLoading(false);
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -172,16 +168,6 @@ setLoading(false);
                 style={styles.toggleButton}
               />
             </View>
-
-            {!isSignUp && (
-              <Button
-                title="Continue with Google"
-                onPress={() => promptAsync()}
-                loading={loading}
-                style={{ marginBottom: 16 }}
-                disabled={!request}
-              />
-            )}
 
             {isSignUp && (
               <View style={styles.inputContainer}>
@@ -322,13 +308,13 @@ setLoading(false);
         {!isSignUp && (
           <View style={styles.header}>
             <Text style={styles.footerText}>
-              By continuing, you agree to our{' '}
+              By continuing, you agree to our{'\n'}
               <Text
                 style={{ color: '#6366f1', textDecorationLine: 'underline' }}
                 onPress={() => Linking.openURL('https://pyonet.com')}
               >
                 Terms of Service
-              </Text>
+              </Text>{' '}
               and{' '}
               <Text
                 style={{ color: '#6366f1', textDecorationLine: 'underline' }}
@@ -339,14 +325,9 @@ setLoading(false);
             </Text>
           </View>
         )}
-{showPrivacy && (
-  <PrivacyModal
-    visible={true}
-    onClose={() => setShowPrivacy(false)}
-  />
-)}
-
-
+        {showPrivacy && (
+          <PrivacyModal visible={true} onClose={() => setShowPrivacy(false)} />
+        )}
       </LinearGradient>
     </KeyboardAvoidingView>
   );
