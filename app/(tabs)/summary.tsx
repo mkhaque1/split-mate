@@ -23,7 +23,9 @@ import {
 import {
   AdEventType,
   BannerAd,
-  BannerAdSize
+  BannerAdSize,
+  InterstitialAd,
+  TestIds,
 } from 'react-native-google-mobile-ads';
 
 const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
@@ -382,13 +384,13 @@ export default function SummaryScreen() {
           )}
         </ScrollView>
         {!isPro && (
-            <BannerAd
-          unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-        />
+          <BannerAd
+            unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
+            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+            }}
+          />
         )}
       </LinearGradient>
     </View>
