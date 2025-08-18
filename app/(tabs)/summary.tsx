@@ -21,9 +21,14 @@ import {
   View,
 } from 'react-native';
 import {
+  AdEventType,
   BannerAd,
   BannerAdSize
 } from 'react-native-google-mobile-ads';
+
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+  requestNonPersonalizedAdsOnly: true,
+});
 
 export default function SummaryScreen() {
   const { user, currentGroup, expenses, refreshExpenses } = useApp();
@@ -223,6 +228,39 @@ export default function SummaryScreen() {
 
   const { isPro } = useApp();
 
+  // Show interstitial ad before generating PDF report
+  const handleDownloadReport = () => {
+    if (isPro) {
+      generatePDFReport();
+      return;
+    }
+    interstitial.load();
+    const adListener = interstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        interstitial.show();
+      }
+    );
+    const closeListener = interstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        generatePDFReport();
+        adListener();
+        closeListener();
+      }
+    );
+    // If ad fails to load, proceed anyway
+    const errorListener = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      () => {
+        generatePDFReport();
+        adListener();
+        closeListener();
+        errorListener();
+      }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
@@ -246,7 +284,7 @@ export default function SummaryScreen() {
           <Button
             title="Download PDF Report"
             icon={<Download size={20} color="#ffffff" />}
-            onPress={generatePDFReport}
+            onPress={handleDownloadReport}
             loading={generating}
             style={styles.exportButton}
           />
