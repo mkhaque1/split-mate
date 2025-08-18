@@ -45,7 +45,7 @@ export default function RootLayout() {
   }
 
   return (
-    <StripeProvider publishableKey="pk_test_51Riu1dE3DagpddtyiDGN1qlPJ8PxxjSJbOPF4loWv197MZUnlzlqQHpH5DboGwZYYrMY7141VHEhLJ3ufJEoGv4r00QUkgXwHA">
+    <StripeProvider publishableKey="pk_live_51Riu1WCX5uApISzR8Ltiju6VwWrp2mggEOKv3mjqAv2pBWRbJ7uVZYrpTTgUm1KFoJdoqr9KOKRHJSMw3w1d3WDX007hPgaHC5">
       <AppProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="auth" options={{ headerShown: false }} />

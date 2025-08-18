@@ -7,7 +7,7 @@ const BANNER_ID = __DEV__
   : 'ca-app-pub-8613339095164526/4093158170'; //real Banner Ad Unit ID
 
 const INTERSTITIAL_ID = __DEV__
-  ? 'ca-app-pub-3940256099942544/1033173712' // Test Interstitial Ad Unit ID
+  ? 'ca-app-pub-8613339095164526/3230937993' // Test Interstitial Ad Unit ID
   : 'ca-app-pub-8613339095164526/3230937993'; //real Interstitial Ad Unit ID
 
 export function BannerAd() {

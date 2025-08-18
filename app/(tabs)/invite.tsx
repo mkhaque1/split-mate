@@ -22,8 +22,7 @@ import {
 } from 'react-native';
 import {
   BannerAd,
-  BannerAdSize,
-  TestIds,
+  BannerAdSize
 } from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 export default function InviteScreen() {
@@ -308,7 +307,7 @@ export default function InviteScreen() {
         </ScrollView>
         {!isPro && (
            <BannerAd
-                 unitId={TestIds.BANNER} // Replace with your actual ad unit ID in production
+                 unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
                  size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
                  requestOptions={{
                    requestNonPersonalizedAdsOnly: true,
