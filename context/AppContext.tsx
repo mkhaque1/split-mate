@@ -10,7 +10,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Alert } from 'react-native';
 
 interface Plan {
   key: string;
@@ -59,10 +58,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         if ( updatedAt &&  (!planExpiry || planExpiry <= currentDate )) {
           console.log('User plan expired or missing. Downgrading to free.');
-          Alert.alert(
-            'Plan Expired',
-            'Your subscription has expired. You have been downgraded to the free plan.'
-          );
+          // Alert.alert(
+          //   'Plan Expired',
+          //   'Your subscription has expired. You have been downgraded to the free plan.'
+          // );
           setIsPro(false);
           setUserSelectedPlan(null);
 
