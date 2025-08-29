@@ -21,13 +21,12 @@ import {
   AdEventType,
   BannerAd,
   BannerAdSize,
-  InterstitialAd,
-  TestIds,
+  InterstitialAd
 } from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
-
-const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
+const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
   requestNonPersonalizedAdsOnly: true,
 });
 
@@ -251,7 +250,7 @@ export default function ExpensesScreen() {
         {!isPro && (
           <View style={styles.footer}>
             <BannerAd
-              unitId={TestIds.BANNER} // Replace with your actual ad unit ID in production
+              unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
               size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
               requestOptions={{
                 requestNonPersonalizedAdsOnly: true,

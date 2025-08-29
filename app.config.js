@@ -2,11 +2,11 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: 'split-mate',
-    slug: 'split-mate',
+    name: 'Split-mate',
+    slug: 'Split-mate',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/icon.png',
+    icon: './assets/images/icon.jpg',
     scheme: 'splitmate',
     deepLinks: ['splitmate://', 'https://quick-split-together.vercel.app/'],
     userInterfaceStyle: 'automatic',
@@ -20,7 +20,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/images/icon.png',
+        foregroundImage: './assets/images/icon.jpg',
         backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
@@ -34,7 +34,7 @@ export default {
     web: {
       bundler: 'metro',
       output: 'static',
-      favicon: './assets/images/favicon.png',
+      favicon: './assets/images/favicon.jpg',
     },
     plugins: [
       'expo-router',
@@ -50,7 +50,7 @@ export default {
       [
         'expo-splash-screen',
         {
-          image: './assets/images/icon.png',
+          image: './assets/images/icon.jpg',
           imageWidth: 200,
           resizeMode: 'contain',
           backgroundColor: '#ffffff',

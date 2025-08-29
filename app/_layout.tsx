@@ -18,12 +18,7 @@ import { AppProvider } from '../context/AppContext';
 import { useFrameworkReady } from '../hooks/useFramewrokReady';
 LogBox.ignoreAllLogs();
 SplashScreen.preventAutoHideAsync();
-  useEffect(() => {
-    const initializeAds = async () => {
-      await MobileAds().initialize();
-    };
-    initializeAds();
-  }, []);
+
 export default function RootLayout() {
   useFrameworkReady();
 
@@ -35,14 +30,24 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    const initializeAds = async () => {
+      try {
+        await MobileAds().initialize();
+        console.log("Ads initialized");
+      } catch (e) {
+        console.error("Ads init error", e);
+      }
+    };
+    initializeAds();
+  }, []);
+
+  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <StripeProvider publishableKey="pk_live_51Riu1WCX5uApISzR8Ltiju6VwWrp2mggEOKv3mjqAv2pBWRbJ7uVZYrpTTgUm1KFoJdoqr9KOKRHJSMw3w1d3WDX007hPgaHC5">

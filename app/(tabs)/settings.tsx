@@ -42,11 +42,13 @@ import {
 } from 'react-native';
 import {
   AdEventType,
-  InterstitialAd,
-  TestIds,
+  InterstitialAd
 } from 'react-native-google-mobile-ads';
 
-const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+
+const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
+
+const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
   requestNonPersonalizedAdsOnly: true,
 });
 

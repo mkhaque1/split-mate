@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, Receipt, Settings, UserPlus } from 'lucide-react-native';
-
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function TabLayout() {
+   const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -12,8 +14,7 @@ export default function TabLayout() {
           borderTopColor: '#f1f5f9',
           paddingTop: 0,
           paddingBottom: 0,
-          // marginBottom:30,
-          height: 80,
+            height: 80 + (Platform.OS === "android" ? insets.bottom : 0), // dynamic bottom inset
         },
         tabBarIconStyle: {
           marginTop: 5,
