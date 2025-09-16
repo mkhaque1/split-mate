@@ -5,13 +5,18 @@ import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Google from 'expo-auth-session/providers/google';
+import {
+  GoogleSignin,
+  GoogleSigninButton
+} from '@react-native-google-signin/google-signin';
+// import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+// import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Dimensions,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -23,9 +28,16 @@ import {
   View,
 } from 'react-native';
 
-WebBrowser.maybeCompleteAuthSession();
+// WebBrowser.maybeCompleteAuthSession();
 
+
+GoogleSignin.configure({
+  
+  webClientId: "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com", 
+  offlineAccess: true,
+});
 export default function AuthScreen() {
+  const devicewidth = Dimensions.get('window').width
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,18 +47,15 @@ export default function AuthScreen() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId:
-      '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
-    iosClientId:
-      '942853203229-pfho9ngff6hv7r8ou328lbk333gjlvgd.apps.googleusercontent.com',
-    androidClientId:
-      '942853203229-er6slg4d2jnrmib9agejiej2pe71cja3.apps.googleusercontent.com',
-    webClientId:
-      '942853203229-fut3kl4fcs7o7e5g1sqj9ger0290gdhq.apps.googleusercontent.com',
+  const [userInfo,setuserInfo] = useState(null)
+  useEffect(() => {
+  GoogleSignin.configure({
+    webClientId: "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
+    offlineAccess: true,
   });
+  console.log("Configured with webClientId:", "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com");
+}, []);
 
-  // Auto-login if user is already authenticated
   useEffect(() => {
     AuthService.getCurrentUser().then(async (user) => {
       if (user) {
@@ -56,39 +65,106 @@ export default function AuthScreen() {
     });
   }, []);
 
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token, access_token } = response.authentication as any;
-      handleGoogleLogin(id_token, access_token);
-    }
-  }, [response]);
+  // useEffect(() => {
+  //   if (response?.type === 'success') {
+  //     const { id_token, access_token } = response.authentication as any;
+  //     handleGoogleLogin(id_token, access_token);
+  //   }
+  // }, [response]);
 
-  const handleGoogleLogin = async (idToken: string, accessToken: string) => {
-    setLoading(true);
-    try {
-      const user = await AuthService.signInWithGoogle(idToken, accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(user));
 
-      // ADD THIS LOGIC HERE
-      let groups = await FirestoreService.getUserGroups(user.id);
-      if (groups.length === 0) {
-        await FirestoreService.createGroup({
-          name: `${user.displayName || 'My'}'s Group`,
-          members: [user.id],
-          createdBy: user.id,
-          currency: 'USD',
-        });
-        await refreshGroups();
-      }
 
-      await refreshGroups();
-      router.replace('/(tabs)');
-    } catch (error: any) {
+  // const handleGoogleLogin = async (idToken: string, accessToken: string) => {
+  //   setLoading(true);
+  //   try {
+  //     const user = await AuthService.signInWithGoogle(idToken, accessToken);
+  //     await AsyncStorage.setItem('user', JSON.stringify(user));
+
+  //     // ADD THIS LOGIC HERE
+  //     let groups = await FirestoreService.getUserGroups(user.id);
+  //     if (groups.length === 0) {
+  //       await FirestoreService.createGroup({
+  //         name: `${user.displayName || 'My'}'s Group`,
+  //         members: [user.id],
+  //         createdBy: user.id,
+  //         currency: 'USD',
+  //       });
+  //       await refreshGroups();
+  //     }
+
+  //     await refreshGroups();
+  //     router.replace('/(tabs)');
+  //   } catch (error: any) {
+  //     Alert.alert('Error', error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const handleGoogleSignin = async () => {
+  console.log('calling Google Sign-In...');
+  try {
+    // ✅ Ensure Play Services is available and updated
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+    // ✅ Trigger Google Sign-In
+    const response = await GoogleSignin.signIn();
+
+    console.log('Google Sign-In success:', response);
+
+    setuserInfo(response.user);
+
+    // If you want to link with Firebase:
+    // const { idToken } = response;
+    // const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    // await auth().signInWithCredential(googleCredential);
+
+  } catch (error: any) {
+    console.log('Google Sign-In error:', error);
+
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      Alert.alert('Cancelled', 'User cancelled the login flow');
+    } else if (error.code === statusCodes.IN_PROGRESS) {
+      Alert.alert('In Progress', 'Sign in is in progress');
+    } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      Alert.alert('Error', 'Play services are not available or outdated');
+    } else {
       Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
     }
-  };
+  }
+};
+
+// Somewhere in your code
+// const handleGoogleSignin = async () => {
+//   try {
+//     await GoogleSignin.hasPlayServices();
+//     const response = await GoogleSignin.signIn();
+//     if (isSuccessResponse(response)) {
+//       console.log('reso', response?.data)
+//       // setState({ userInfo: response.data });
+//     } else {
+//       // sign in was cancelled by user
+//     }
+//   } catch (error) {
+//     if (isErrorWithCode(error)) {
+//       switch (error.code) {
+//         case statusCodes.IN_PROGRESS:
+//           // operation (eg. sign in) already in progress
+//           break;
+//         case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+//           console.log('error', error)
+//           // Android only, play services not available or outdated
+//           break;
+//         default:
+//         // some other error happened
+//       }
+//     } else {
+//           console.log('error', error)
+
+//       // an error that's not related to google sign in occurred
+//     }
+//   }
+// };
+
 
   const handleAuth = async () => {
     if (!email || !password || (isSignUp && !displayName)) {
@@ -160,6 +236,7 @@ export default function AuthScreen() {
                 onPress={() => setIsSignUp(false)}
                 style={styles.toggleButton}
               />
+
               <Button
                 title="Sign Up"
                 variant={isSignUp ? 'primary' : 'ghost'}
@@ -303,6 +380,17 @@ export default function AuthScreen() {
               loading={loading}
               style={styles.authButton}
             />
+<Text style={{color:'#fff', fontSize: 16,
+    fontFamily: 'Inter-Bold',alignSelf:'center',marginVertical:15}}>
+  OR
+</Text>
+            
+              <GoogleSigninButton
+              style={{width:devicewidth-15, height:48,alignSelf:'center'}}
+              size={GoogleSigninButton.Size.Wide}
+              color={GoogleSigninButton.Color.Dark}
+              onPress={handleGoogleSignin}
+              />
           </View>
         </ScrollView>
         {!isSignUp && (

@@ -19,10 +19,15 @@ export default {
       },
     },
     android: {
+      googleServicesFile: "./google-services.json",
+
       adaptiveIcon: {
         foregroundImage: './assets/images/icon.jpg',
         backgroundColor: '#ffffff',
+
       },
+  
+
       edgeToEdgeEnabled: true,
       package: 'com.splitmate.app',
       config: {
@@ -56,6 +61,10 @@ export default {
           backgroundColor: '#ffffff',
         },
       ],
+      [
+        "@react-native-google-signin/google-signin",
+    
+      ]
     ],
     experiments: {
       typedRoutes: true,

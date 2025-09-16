@@ -71,6 +71,7 @@ export default function SettingsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
+  console.log('the members',groupMembers)
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
@@ -96,6 +97,8 @@ export default function SettingsScreen() {
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
       setGroupMembers(members);
+      return members
+
     } catch (error) {
       console.error('Error loading group members:', error);
     }
@@ -151,26 +154,26 @@ export default function SettingsScreen() {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              // Remove member from Firestore group
-              const groupRef = doc(db, 'groups', currentGroup.id);
-              await updateDoc(groupRef, {
-                members: currentGroup.members.filter((id) => id !== memberId),
-              });
+      onPress: async () => {
+  try {
+    // Remove member from Firestore group
+    const groupRef = doc(db, 'groups', currentGroup.id);
+    await updateDoc(groupRef, {
+      members: currentGroup.members.filter((id) => id !== memberId),
+    });
 
-              // Optionally, refresh group members in UI
-              await refreshGroups();
-              await loadGroupMembers();
+    // Remove from local state
+    setGroupMembers(groupMembers.filter((member) => member.id !== memberId));
 
-              Alert.alert(
-                'Success',
-                `${memberName} has been removed from the group.`
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Failed to remove member');
-            }
-          },
+    Alert.alert(
+      'Success',
+      `${memberName} has been removed from the group.`
+    );
+  } catch (error) {
+    Alert.alert('Error', 'Failed to remove member');
+  }
+}
+
         },
       ]
     );
@@ -178,10 +181,12 @@ export default function SettingsScreen() {
 
   // Add member handler
   const handleAddMember = async (member) => {
+    console.log('step1')
     // Find user by email in Firestore
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', member.email));
     const querySnapshot = await getDocs(q);
+    console.log('step2')
 
     if (querySnapshot.empty) {
       Alert.alert(
@@ -193,9 +198,13 @@ export default function SettingsScreen() {
 
     const userDoc = querySnapshot.docs[0];
     const userId = userDoc.id;
+    console.log('step3', userId)
+
 
     // Add userId to group members in Firestore
     const groupRef = doc(db, 'groups', currentGroup.id);
+    console.log('step3', groupRef)
+
     const groupSnap = await getDoc(groupRef);
     if (!groupSnap.exists()) return;
 
@@ -210,8 +219,14 @@ export default function SettingsScreen() {
     });
 
     // Refresh local members list
-    await loadGroupMembers();
+    // await loadGroupMembers();
+    
+    // setTimeout(async() => {
+await onRefresh()
+
     Alert.alert('Success', 'Member added to the group!');
+      
+    // }, 1000);
   };
 
   const handleSaveName = async () => {

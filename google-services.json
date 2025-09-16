@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "942853203229",
+    "project_id": "split-mate-app-1f212",
+    "storage_bucket": "split-mate-app-1f212.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:942853203229:android:f6a5e3a1990dda5fe32df4",
+        "android_client_info": {
+          "package_name": "com.splitmate.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "942853203229-ibfkobi9m0hmiq3g5v7alf5ho9eau5ob.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.splitmate.app",
+            "certificate_hash": "92a6d96205571971a4674291c3396801c697a4fa"
+          }
+        },
+        {
+          "client_id": "942853203229-k3qkj25m21bph0ajot3p64q8a4ds281i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.splitmate.app",
+            "certificate_hash": "43edfe7bc786b1ae1a235cf97bc71e5441657eef"
+          }
+        },
+        {
+          "client_id": "942853203229-spbib4u56gbu4qdjkj8jlnbb9klveatc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.splitmate.app",
+            "certificate_hash": "7bf04a7e4e5c76b942f1446c03c9b71e2682903b"
+          }
+        },
+        {
+          "client_id": "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2bY-dI12BDtLj9-bqHLdDTiwNGALkJ6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
