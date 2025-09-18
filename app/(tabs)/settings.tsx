@@ -5,11 +5,13 @@ import CurrencySelector from '@/components/CurrencySelector';
 import GradientText from '@/components/GradientText';
 import Subscribe from '@/components/Subscribe';
 import { useApp } from '@/context/AppContext';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import {
   collection,
   doc,
@@ -96,6 +98,7 @@ export default function SettingsScreen() {
 
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
+      console.log('refresh members are ', members)
       setGroupMembers(members);
       return members
 
@@ -116,24 +119,32 @@ export default function SettingsScreen() {
     setShowCurrencySelector(false);
     Alert.alert('Success', `Currency changed to ${selectedCurrency}`);
   };
+const handleSignOut = () => {
+  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Sign Out',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          // 1️⃣ Sign out from Firebase
+          await firebaseSignOut(auth);
 
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut();
-            router.replace('/auth');
-          } catch (error) {
-            Alert.alert('Error', 'Failed to sign out');
-          }
-        },
+          // 2️⃣ Sign out from Google session
+          await GoogleSignin.signOut();
+
+          // 3️⃣ (Optional) Disconnect to clear cached accounts
+          // await GoogleSignin.revokeAccess();
+
+          router.replace('/auth');
+        } catch (error) {
+          console.log('Sign out error:', error);
+          Alert.alert('Error', 'Failed to sign out');
+        }
       },
-    ]);
-  };
+    },
+  ]);
+};
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (memberId === user?.id) {

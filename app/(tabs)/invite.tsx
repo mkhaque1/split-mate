@@ -10,7 +10,7 @@ import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { collection, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { Mail, Trash2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
@@ -300,7 +300,6 @@ export default function InviteScreen() {
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('email', '==', member.email));
         const querySnapshot = await getDocs(q);
-    console.log('query',querySnapshot)
         if (querySnapshot.empty) {
           Alert.alert(
             'User Not Found',
@@ -315,6 +314,7 @@ export default function InviteScreen() {
         // Add userId to group members in Firestore
         const groupRef = doc(db, 'groups', currentGroup.id);
         const groupSnap = await getDoc(groupRef);
+        console.log('snap is', groupSnap)
         if (!groupSnap.exists()) return;
     
         const currentMembers = groupSnap.data().members || [];
@@ -326,6 +326,8 @@ export default function InviteScreen() {
         await updateDoc(groupRef, {
           members: [...currentMembers, userId],
         });
+await onRefresh()
+
     
         // Refresh local members list
         // await loadGroupMembers();
