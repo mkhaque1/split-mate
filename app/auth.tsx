@@ -119,16 +119,18 @@ const handleGoogleSignin = async () => {
 
     // ✅ Create default group & marketing consent (move this inside AuthService if you prefer central logic)
     let groups = await FirestoreService.getUserGroups(savedUser.id);
-    if (groups.length === 0) {
-      await FirestoreService.createGroup({
-        name: ${savedUser.displayName || 'My'}'s Group,
-        members: [savedUser.id],
-        createdBy: savedUser.id,
-        currency: 'USD',
-      });
-      await FirestoreService.setUserMarketingConsent(savedUser.id, acceptMarketing);
-      await refreshGroups();
-    }
+  if (groups.length === 0) {
+  await FirestoreService.createGroup({
+    name: `${savedUser.displayName || 'My'}'s Group`,
+    members: [savedUser.id],
+    createdBy: savedUser.id,
+    currency: 'USD',
+  });
+
+  await FirestoreService.setUserMarketingConsent(savedUser.id, acceptMarketing);
+  await refreshGroups();
+}
+
 
     setuserInfo(savedUser);
 setLoader(false)
@@ -179,12 +181,18 @@ setLoader(false)
         const user = await AuthService.signUp(email, password, displayName);
 
         // Create a default group for the user
-        await FirestoreService.createGroup({
-          name: ${displayName}'s Group,
-          members: [user.id],
-          createdBy: user.id,
-          currency: 'USD',
-        });
+        if (groups.length === 0) {
+  await FirestoreService.createGroup({
+    name: `${savedUser.displayName || 'My'}'s Group`,
+    members: [savedUser.id],
+    createdBy: savedUser.id,
+    currency: 'USD',
+  });
+
+  await FirestoreService.setUserMarketingConsent(savedUser.id, acceptMarketing);
+  await refreshGroups();
+}
+
 
         // Store marketing consent in Firestore
         await FirestoreService.setUserMarketingConsent(
