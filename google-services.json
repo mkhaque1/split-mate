@@ -7,6 +7,67 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:942853203229:android:145e5ecee3020c97e32df4",
+        "android_client_info": {
+          "package_name": "com.mysplitmate.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "942853203229-1n7498iu81e18ehdmopqh97vbemh3jgk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mysplitmate.app",
+            "certificate_hash": "43edfe7bc786b1ae1a235cf97bc71e5441657eef"
+          }
+        },
+        {
+          "client_id": "942853203229-96qjlu3aa6iq1jp3umj4tacosa0f1jss.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mysplitmate.app",
+            "certificate_hash": "7bf04a7e4e5c76b942f1446c03c9b71e2682903b"
+          }
+        },
+        {
+          "client_id": "942853203229-ltj11f85mi56v2v1lig5hqu8t93tp0jp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mysplitmate.app",
+            "certificate_hash": "92a6d96205571971a4674291c3396801c697a4fa"
+          }
+        },
+        {
+          "client_id": "942853203229-udko3pj5rt3v2ki7qgun9pjnr7h3q5rt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mysplitmate.app",
+            "certificate_hash": "e481b9e08519c635f1d14de37c9a335a88c93944"
+          }
+        },
+        {
+          "client_id": "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2bY-dI12BDtLj9-bqHLdDTiwNGALkJ6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:942853203229:android:f6a5e3a1990dda5fe32df4",
         "android_client_info": {
           "package_name": "com.splitmate.app"

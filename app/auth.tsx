@@ -6,8 +6,7 @@ import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  GoogleSignin,
-  GoogleSigninButton
+  GoogleSignin
 } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -27,6 +26,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // WebBrowser.maybeCompleteAuthSession();
 
@@ -209,6 +209,8 @@ setLoader(false)
   };
 
   return (
+    <SafeAreaView style={{flex:1}}>
+
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -386,18 +388,19 @@ setLoader(false)
 </Text>
             
 
-
             {
   Loader ? 
   <ActivityIndicator size={'large'} color={'#6366f1'} /> :
-       <GoogleSigninButton
-              style={{width:devicewidth-15, height:48,alignSelf:'center'}}
-              size={GoogleSigninButton.Size.Wide}
-              color={GoogleSigninButton.Color.Dark}
+
+  <Button
+              title={'Sign In with Google'}
               onPress={handleGoogleSignin}
-              />
-}
-           
+              loading={Loader}
+              style={styles.authButton}
+            />
+            }
+            
+
           </View>
         </ScrollView>
 
@@ -427,6 +430,8 @@ setLoader(false)
         )}
       </LinearGradient>
     </KeyboardAvoidingView>
+    </SafeAreaView>
+
   );
 }
 
