@@ -31,11 +31,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // WebBrowser.maybeCompleteAuthSession();
 
-GoogleSignin.configure({
-  webClientId:
-    '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
-  offlineAccess: true,
-});
 export default function AuthScreen() {
   const devicewidth = Dimensions.get('window').width;
   const [isSignUp, setIsSignUp] = useState(false);
@@ -47,27 +42,45 @@ export default function AuthScreen() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [userInfo, setuserInfo] = useState(null);
+  const [userInfo, setuserInfo] = useState<any>(null);
   const [Loader, setLoader] = useState(false);
+  
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId:
-        '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
-      offlineAccess: true,
-    });
-    console.log(
-      'Configured with webClientId:',
-      '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
-    );
+    const configureGoogleSignIn = async () => {
+      try {
+        await GoogleSignin.configure({
+          webClientId: '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
+          offlineAccess: true,
+          hostedDomain: '',
+          forceCodeForRefreshToken: true,
+        });
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Google Sign-In configuration error:', error);
+      }
+    };
+    
+    configureGoogleSignIn();
   }, []);
 
   useEffect(() => {
-    AuthService.getCurrentUser().then(async (user) => {
-      if (user) {
-        await AsyncStorage.setItem('user', JSON.stringify(user));
-        router.replace('/(tabs)');
+    const initializeAuth = async () => {
+      try {
+        // Check current user
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          console.log('User already signed in:', currentUser.email);
+          await AsyncStorage.setItem('user', JSON.stringify(currentUser));
+          router.replace('/(tabs)');
+        } else {
+          console.log('No current user found');
+        }
+      } catch (error) {
+        console.error('Error checking current user:', error);
       }
-    });
+    };
+
+    initializeAuth();
   }, []);
 
   //   if (response?.type === 'success') {
@@ -103,27 +116,42 @@ export default function AuthScreen() {
   //   }
   // };
   const handleGoogleSignin = async () => {
-    console.log('calling Google Sign-In...');
+    console.log('Starting Google Sign-In...');
     setLoader(true);
+    
     try {
+      // Check if Google Play Services are available
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
 
-      // ✅ Get tokens
-      const { idToken, user } = await GoogleSignin.signIn();
-      const { accessToken } = await GoogleSignin.getTokens();
+      // Sign out any existing user first to ensure clean state
+      await GoogleSignin.signOut();
 
-      // ✅ Authenticate with Firebase via AuthService
+      // Sign in with Google
+      const userInfo = await GoogleSignin.signIn();
+      console.log('Google Sign-In successful:', userInfo);
+
+      if (!userInfo.data?.idToken) {
+        throw new Error('No ID token received from Google Sign-In');
+      }
+
+      // Get access token
+      const tokens = await GoogleSignin.getTokens();
+      console.log('Tokens received');
+
+      // Authenticate with Firebase
       const savedUser = await AuthService.signInWithGoogle(
-        idToken!,
-        accessToken!,
+        userInfo.data.idToken,
+        tokens.accessToken,
       );
 
-      // ✅ Save locally
+      console.log('Firebase authentication successful:', savedUser);
+
+      // Save user data locally
       await AsyncStorage.setItem('user', JSON.stringify(savedUser));
 
-      // ✅ Create default group & marketing consent (move this inside AuthService if you prefer central logic)
+      // Create default group if user is new
       let groups = await FirestoreService.getUserGroups(savedUser.id);
       if (groups.length === 0) {
         await FirestoreService.createGroup({
@@ -132,34 +160,34 @@ export default function AuthScreen() {
           createdBy: savedUser.id,
           currency: 'USD',
         });
+        
+        // Set marketing consent
         await FirestoreService.setUserMarketingConsent(
           savedUser.id,
           acceptMarketing,
         );
+        
         await refreshGroups();
       }
 
       setuserInfo(savedUser);
       setLoader(false);
 
-      // setTimeout(() => {
+      // Navigate to main app
       router.replace('/(tabs)');
-      // }, 200);
+      
     } catch (error: any) {
-      console.log('Google Sign-In error:', error);
+      console.error('Google Sign-In error:', error);
+      setLoader(false);
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        Alert.alert('Cancelled', 'User cancelled the login flow');
-        setLoader(false);
+        Alert.alert('Cancelled', 'Sign-in was cancelled');
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        Alert.alert('In Progress', 'Sign in is in progress');
-        setLoader(false);
+        Alert.alert('In Progress', 'Sign-in is already in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Error', 'Play services are not available or outdated');
-        setLoader(false);
+        Alert.alert('Error', 'Google Play Services are not available or outdated. Please update Google Play Services and try again.');
       } else {
-        Alert.alert('Error', error.message);
-        setLoader(false);
+        Alert.alert('Sign-In Error', error.message || 'An unexpected error occurred during sign-in');
       }
     }
   };

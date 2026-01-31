@@ -1,12 +1,12 @@
 import { User } from '@/types';
 import {
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithCredential,
-  signInWithEmailAndPassword,
-  updateProfile,
+    createUserWithEmailAndPassword,
+    signOut as firebaseSignOut,
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signInWithCredential,
+    signInWithEmailAndPassword,
+    updateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -131,27 +131,39 @@ export class AuthService {
     idToken: string,
     accessToken: string
   ): Promise<User> {
-    const credential = GoogleAuthProvider.credential(idToken, accessToken);
-    const userCredential = await signInWithCredential(auth, credential);
-    const firebaseUser = userCredential.user;
+    try {
+      console.log('Creating Google credential...');
+      const credential = GoogleAuthProvider.credential(idToken, accessToken);
+      
+      console.log('Signing in with Firebase...');
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseUser = userCredential.user;
 
-    // Check if user exists in Firestore, if not, create
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (!userDoc.exists()) {
-      const userData: User = {
+      console.log('Firebase user created:', firebaseUser.uid);
+
+      // Check if user exists in Firestore, if not, create
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      if (!userDoc.exists()) {
+        console.log('Creating new user document in Firestore...');
+        const userData: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          displayName: firebaseUser.displayName || '',
+        };
+        await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+        return userData;
+      }
+
+      console.log('User document exists, returning user data...');
+      return {
         id: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName: firebaseUser.displayName || '',
+        ...userDoc.data(),
       };
-      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-      return userData;
+    } catch (error: any) {
+      console.error('Firebase Google Sign-In Error:', error);
+      throw new Error(`Authentication failed: ${error.message}`);
     }
-
-    return {
-      id: firebaseUser.uid,
-      email: firebaseUser.email!,
-      displayName: firebaseUser.displayName || '',
-      ...userDoc.data(),
-    };
   }
 }
