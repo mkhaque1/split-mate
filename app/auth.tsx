@@ -70,7 +70,6 @@ export default function AuthScreen() {
     });
   }, []);
 
-  // useEffect(() => {
   //   if (response?.type === 'success') {
   //     const { id_token, access_token } = response.authentication as any;
   //     handleGoogleLogin(id_token, access_token);
