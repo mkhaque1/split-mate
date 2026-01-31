@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>splitmate</string>
-          <string>com.splitmate.app</string>
+          <string>com.mysplitmate.app</string>
         </array>
       </dict>
     </array>

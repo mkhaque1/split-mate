@@ -1,4 +1,4 @@
-package com.splitmate.app
+package com.mysplitmate.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

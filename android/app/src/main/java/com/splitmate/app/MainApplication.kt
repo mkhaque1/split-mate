@@ -1,4 +1,4 @@
-package com.splitmate.app
+package com.mysplitmate.app
 
 import android.app.Application
 import android.content.res.Configuration
