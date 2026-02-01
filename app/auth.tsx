@@ -4,7 +4,7 @@ import PrivacyModal from '@/components/PrivacyModal';
 import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
-import { getAuthErrorMessage } from '@/utils/errorMessages';
+import { getAuthErrorMessage, getGoogleSignInErrorMessage } from '@/utils/errorMessages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,

@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0f0f0f',
+    backgroundColor: '#2b1753ff',
   },
   loadingText: {
     color: '#ffffff',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyState: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     alignItems: 'center',
     paddingVertical: 32,
   },
@@ -325,9 +325,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: 60,
-    padding: 10,
-    backgroundColor: '#1e1e1e',
+    height: 80,
+    padding: 0,
+    backgroundColor: '#2b1753ff',
     alignItems: 'center',
   },
 });

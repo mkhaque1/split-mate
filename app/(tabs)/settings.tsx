@@ -9,6 +9,7 @@ import { useApp } from '@/context/AppContext';
 import { auth, db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
+import { copyInviteLink, shareGroupInvite } from '@/utils/shareUtils';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -23,10 +24,12 @@ import {
   where,
 } from 'firebase/firestore';
 import {
+  Copy,
   DollarSign,
   LogOut,
   Pencil,
   Settings as SettingsIcon,
+  Share2,
   Trash2,
   User,
   Users,
@@ -314,6 +317,27 @@ export default function SettingsScreen() {
     }
   };
 
+  // Share group invite handlers
+  const handleShareGroup = async () => {
+    if (!currentGroup || !user) return;
+    
+    const success = await shareGroupInvite({
+      groupId: currentGroup.id,
+      groupName: currentGroup.name,
+      inviterName: user.displayName,
+    });
+    
+    if (success) {
+      console.log('Group invite shared successfully');
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!currentGroup) return;
+    
+    await copyInviteLink(currentGroup.id);
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
@@ -507,6 +531,44 @@ export default function SettingsScreen() {
                 onClose={() => setShowAddMemberModal(false)}
                 onAdd={handleAddMember}
               />
+            </View>
+          </Card>
+
+          {/* Share Group */}
+          <Card style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Share2 size={24} color='#8b5cf6' />
+              <Text style={styles.sectionTitle}>Share Group</Text>
+            </View>
+            
+            <View style={styles.shareSection}>
+              <Text style={styles.shareDescription}>
+                Invite friends to join "{currentGroup?.name}" by sharing the group link
+              </Text>
+              
+              <View style={styles.shareButtons}>
+                <Button
+                  title='Share Invite'
+                  variant='primary'
+                  size='sm'
+                  icon={<Share2 size={16} color='#ffffff' />}
+                  onPress={handleShareGroup}
+                  style={styles.shareButton}
+                />
+                
+                <Button
+                  title='Copy Link'
+                  variant='outline'
+                  size='sm'
+                  icon={<Copy size={16} color='#6366f1' />}
+                  onPress={handleCopyInviteLink}
+                  style={styles.shareButton}
+                />
+              </View>
+              
+              <Text style={styles.shareNote}>
+                💡 Friends will be prompted to download the app if they don't have it
+              </Text>
             </View>
           </Card>
 
@@ -740,7 +802,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   sectionCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#3a1d4bff',
     marginBottom: 24,
   },
   sectionHeader: {
@@ -883,5 +945,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  shareSection: {
+    gap: 16,
+  },
+  shareDescription: {
+    fontSize: 14,
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    maxWidth: 140,
+  },
+  shareNote: {
+    fontSize: 12,
+    color: '#71717a',
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

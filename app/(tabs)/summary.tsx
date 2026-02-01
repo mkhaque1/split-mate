@@ -1,4 +1,4 @@
-import { BannerAdComponent } from '@/components/AdMobManager';
+import { BannerAdComponent, interstitialAdManager } from '@/components/AdMobManager';
 import BalanceItem from '@/components/BalanceItem';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#262626',
+    backgroundColor: '#361c69ff',
   },
   statHeader: {
     flexDirection: 'row',
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
   },
   emptyText: {
     fontSize: 14,

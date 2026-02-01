@@ -1,15 +1,13 @@
-import AddMemberModal from '@/components/AddMemberModal';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import GradientText from '@/components/GradientText';
 import { db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
-import * as Clipboard from 'expo-clipboard';
+import { copyInviteLink, shareGroupInvite } from '@/utils/shareUtils';
 
-import { BannerAdComponent } from '@/components/AdMobManager';
+import { BannerAdComponent, interstitialAdManager } from '@/components/AdMobManager';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import {
   collection,
@@ -20,24 +18,21 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { Mail, Trash2, Users } from 'lucide-react-native';
+import { Copy, Share2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Platform,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useApp } from '../../context/AppContext';
 
 export default function InviteScreen() {
   const { user, currentGroup, refreshGroups } = useApp();
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
@@ -45,6 +40,27 @@ export default function InviteScreen() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const { isPro } = useApp();
+
+  // Share group invite handlers
+  const handleShareGroup = async () => {
+    if (!currentGroup || !user) return;
+    
+    const success = await shareGroupInvite({
+      groupId: currentGroup.id,
+      groupName: currentGroup.name,
+      inviterName: user.displayName,
+    });
+    
+    if (success) {
+      console.log('Group invite shared successfully');
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!currentGroup) return;
+    
+    await copyInviteLink(currentGroup.id);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -72,103 +88,6 @@ export default function InviteScreen() {
     setRefreshing(false);
   };
 
-  const generateInviteLink = () => {
-    if (!currentGroup) return '';
-
-    const baseUrl = Linking.createURL('');
-    return `${baseUrl}invite/${currentGroup.id}`;
-  };
-
-  const copyInviteLink = async () => {
-    const inviteLink = generateInviteLink();
-    try {
-      await Clipboard.setStringAsync(inviteLink);
-      Alert.alert('Success', 'Invite link copied to clipboard!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to copy invite link');
-    }
-  };
-
-  const shareInviteLink = async () => {
-    const inviteLink = generateInviteLink();
-    const message = `Join my expense group "${currentGroup?.name}" on SplitMate: ${inviteLink}`;
-
-    try {
-      if (Platform.OS !== 'web') {
-        // Use native Share API on mobile
-        await Share.share({
-          message: message,
-          url: inviteLink,
-          title: 'Join my SplitMate group',
-        });
-      } else {
-        // Fallback for web
-        if (navigator.share) {
-          await navigator.share({
-            title: 'Join my SplitMate group',
-            text: message,
-            url: inviteLink,
-          });
-        } else {
-          await Clipboard.setStringAsync(message);
-          Alert.alert('Success', 'Invite message copied to clipboard!');
-        }
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback to clipboard
-      try {
-        await Clipboard.setStringAsync(message);
-        Alert.alert('Success', 'Invite message copied to clipboard!');
-      } catch (clipboardError) {
-        Alert.alert('Error', 'Failed to share invite');
-      }
-    }
-  };
-
-  const sendEmailInvite = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter an email address');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const inviteLink = generateInviteLink();
-      const subject = `Join "${currentGroup?.name}" on SplitMate`;
-      const body = `Hi!\n\nYou've been invited to join the expense group "${currentGroup?.name}" on SplitMate.\n\nClick the link below to join:\n${inviteLink}\n\nSplitMate makes it easy to track and split shared expenses with friends, roommates, and family.\n\nSee you there!\n${user?.displayName}`;
-
-      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(
-        subject,
-      )}&body=${encodeURIComponent(body)}`;
-
-      const canOpen = await Linking.canOpenURL(mailtoUrl);
-      if (canOpen) {
-        await Linking.openURL(mailtoUrl);
-        setEmail('');
-        Alert.alert('Success', 'Email app opened with invitation');
-      } else {
-        // Fallback to copying the invitation text
-        await Clipboard.setStringAsync(`${subject}\n\n${body}`);
-        Alert.alert(
-          'Email Not Available',
-          'Invitation copied to clipboard. You can paste it into your email app.',
-        );
-      }
-    } catch (error) {
-      console.error('Error sending email invite:', error);
-      Alert.alert('Error', 'Failed to send email invitation');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!user || !currentGroup) {
     return (
       <View style={styles.loadingContainer}>
@@ -176,42 +95,6 @@ export default function InviteScreen() {
       </View>
     );
   }
-
-  const handleRemoveSubscription = async () => {
-    Alert.alert(
-      'Remove Subscription',
-      'Are you sure you want to remove your subscription?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await FirestoreService.UpdatePlan(
-                user.id,
-                false,
-                '',
-                '',
-                '',
-                null,
-              );
-              setUserSelectedPlan(null);
-              setIsPro(false);
-              null;
-              Alert.alert(
-                'Subscription Removed',
-                'Your subscription has been removed successfully.',
-              );
-            } catch (error) {
-              console.error('Error removing subscription:', error);
-              Alert.alert('Error', 'Failed to remove subscription.');
-            }
-          },
-        },
-      ],
-    );
-  };
 
   // Show interstitial ad before opening AddMemberModal
   const handleShowAddMember = async () => {
@@ -279,7 +162,7 @@ export default function InviteScreen() {
   };
 
   // Add member handler
-  const handleAddMember = async (member) => {
+  const handleAddMember = async (member: any) => {
     console.log('adding member');
     // Find user by email in Firestore
     const usersRef = collection(db, 'users');
@@ -346,91 +229,45 @@ export default function InviteScreen() {
         >
           {/* Add Members (Shifted from Settings) */}
 
-          {/* Email Invite Section */}
+          {/* Share Invite Section */}
           <Card style={styles.inviteCard}>
             <View style={styles.cardHeader}>
-              <Mail size={24} color='#6366f1' />
-              <Text style={styles.cardTitle}>Send Email Invitation</Text>
+              <Share2 size={24} color='#8b5cf6' />
+              <Text style={styles.cardTitle}>Share Group Invite</Text>
             </View>
 
-            <View style={styles.emailSection}>
-              <TextInput
-                style={styles.emailInput}
-                value={email}
-                onChangeText={setEmail}
-                placeholder='Enter email address'
-                placeholderTextColor='#71717a'
-                keyboardType='email-address'
-                autoCapitalize='none'
-                autoComplete='email'
-              />
-
-              <Button
-                title='Send Invite'
-                onPress={sendEmailInvite}
-                loading={loading}
-                style={styles.sendButton}
-              />
+            <View style={styles.shareSection}>
+              <Text style={styles.shareDescription}>
+                Invite friends to join "{currentGroup.name}" by sharing the group link
+              </Text>
+              
+              <View style={styles.shareButtons}>
+                <Button
+                  title='Share Invite'
+                  variant='primary'
+                  size='sm'
+                  icon={<Share2 size={16} color='#ffffff' />}
+                  onPress={handleShareGroup}
+                  style={styles.shareButton}
+                />
+                
+                <Button
+                  title='Copy Link'
+                  variant='outline'
+                  size='sm'
+                  icon={<Copy size={16} color='#6366f1' />}
+                  onPress={handleCopyInviteLink}
+                  style={styles.shareButton}
+                />
+              </View>
+              
+              <Text style={styles.shareNote}>
+                💡 Friends will be prompted to download the app if they don't have it
+              </Text>
             </View>
           </Card>
 
-          <View style={styles.membersList}>
-            {groupMembers.map((member) => (
-              <View key={member.id} style={styles.memberItem}>
-                <View style={styles.memberAvatar}>
-                  <Text style={styles.memberInitial}>
-                    {member.displayName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-
-                <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>{member.displayName}</Text>
-                  <Text style={styles.memberEmail}>{member.email}</Text>
-                </View>
-
-                <View style={styles.memberActions}>
-                  {member.id === currentGroup.createdBy && (
-                    <View style={styles.adminBadge}>
-                      <Text style={styles.adminText}>Admin</Text>
-                    </View>
-                  )}
-
-                  {currentGroup.createdBy === user.id &&
-                    member.id !== user.id && (
-                      <Button
-                        title=''
-                        variant='ghost'
-                        size='sm'
-                        icon={<Trash2 size={16} color='#ef4444' />}
-                        onPress={() =>
-                          handleRemoveMember(member.id, member.displayName)
-                        }
-                        style={styles.removeButton}
-                      />
-                    )}
-                </View>
-              </View>
-            ))}
-            <View>
-              {groupMembers.length === 0 && (
-                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
-                  No members in this group
-                </Text>
-              )}
-              <Button
-                title='Add Members Manually?'
-                variant='outline'
-                size='sm'
-                onPress={handleShowAddMember}
-                style={{ marginTop: 18 }}
-              />
-            </View>
-            <AddMemberModal
-              visible={showAddMemberModal}
-              onClose={() => setShowAddMemberModal(false)}
-              onAdd={handleAddMember}
-            />
-          </View>
+        
 
           {/* Share Link Section */}
           {/* <Card style={styles.inviteCard}>
@@ -501,6 +338,21 @@ export default function InviteScreen() {
                 </View>
               ))}
             </View>
+
+            <View>
+              {groupMembers.length === 0 && (
+                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
+                  No members in this group
+                </Text>
+              )}
+              <Button
+                title='Add Members Manually?'
+                variant='outline'
+                size='sm'
+                onPress={handleShowAddMember}
+                style={{ marginTop: 18 }}
+              />
+            </View>
           </Card>
 
           {/* Instructions */}
@@ -566,15 +418,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   inviteCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 24,
   },
   membersCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 24,
   },
   instructionsCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 32,
   },
   cardHeader: {
@@ -594,21 +446,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     marginBottom: 16,
   },
-  emailSection: {
+  shareSection: {
     gap: 16,
   },
-  emailInput: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+  shareDescription: {
+    fontSize: 14,
+    color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#404040',
+    lineHeight: 20,
+    textAlign: 'center',
   },
-  sendButton: {
-    alignSelf: 'stretch',
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    maxWidth: 140,
+  },
+  shareNote: {
+    fontSize: 12,
+    color: '#71717a',
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   linkSection: {
     gap: 16,
@@ -713,5 +575,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontFamily: 'Inter-Regular',
+  },
+  memberActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  removeButton: {
+    width: 36,
+    height: 36,
+    padding: 0,
   },
 });
