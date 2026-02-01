@@ -19,14 +19,12 @@ export default {
       },
     },
     android: {
-      googleServicesFile: "./google-services.json",
+      googleServicesFile: './google-services.json',
 
       adaptiveIcon: {
-        foregroundImage: './assets/images/icon.jpg',
+        foregroundImage: './assets/images/logo.gif',
         backgroundColor: '#ffffff',
-
       },
-  
 
       edgeToEdgeEnabled: true,
       package: 'com.mysplitmate.app',
@@ -61,10 +59,7 @@ export default {
           backgroundColor: '#ffffff',
         },
       ],
-      [
-        "@react-native-google-signin/google-signin",
-    
-      ]
+      ['@react-native-google-signin/google-signin'],
     ],
     experiments: {
       typedRoutes: true,

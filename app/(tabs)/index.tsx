@@ -21,7 +21,7 @@ import {
   AdEventType,
   BannerAd,
   BannerAdSize,
-  InterstitialAd
+  InterstitialAd,
 } from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
@@ -119,7 +119,7 @@ export default function ExpensesScreen() {
   const totalExpenses = CalculationService.getTotalExpenses(expenses);
   const userPaidTotal = CalculationService.getUserExpenseTotal(
     expenses,
-    user.id
+    user.id,
   );
   const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
   const userBalance = userPaidTotal - userOwedTotal;
@@ -135,7 +135,7 @@ export default function ExpensesScreen() {
       AdEventType.LOADED,
       () => {
         interstitial.show();
-      }
+      },
     );
     const closeListener = interstitial.addAdEventListener(
       AdEventType.CLOSED,
@@ -143,7 +143,7 @@ export default function ExpensesScreen() {
         setShowAddExpense(true);
         adListener();
         closeListener();
-      }
+      },
     );
     // If ad fails to load, open modal anyway
     const errorListener = interstitial.addAdEventListener(
@@ -153,13 +153,13 @@ export default function ExpensesScreen() {
         adListener();
         closeListener();
         errorListener();
-      }
+      },
     );
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -179,7 +179,7 @@ export default function ExpensesScreen() {
           <View style={styles.summaryRow}>
             <Card style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
-                <DollarSign size={20} color="#6366f1" />
+                <DollarSign size={20} color='#6366f1' />
                 <Text style={styles.summaryLabel}>Total</Text>
               </View>
               <Text style={styles.summaryAmount}>
@@ -208,8 +208,8 @@ export default function ExpensesScreen() {
           </View>
 
           <Button
-            title="Add New Expense"
-            icon={<Plus size={20} color="#ffffff" />}
+            title='Add New Expense'
+            icon={<Plus size={20} color='#ffffff' />}
             onPress={handleShowAddExpense}
             style={styles.addButton}
           />

@@ -10,7 +10,15 @@ import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { Mail, Trash2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
@@ -28,10 +36,9 @@ import {
   AdEventType,
   BannerAd,
   BannerAdSize,
-  InterstitialAd
+  InterstitialAd,
 } from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
-
 
 const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
 
@@ -148,7 +155,7 @@ export default function InviteScreen() {
       const body = `Hi!\n\nYou've been invited to join the expense group "${currentGroup?.name}" on SplitMate.\n\nClick the link below to join:\n${inviteLink}\n\nSplitMate makes it easy to track and split shared expenses with friends, roommates, and family.\n\nSee you there!\n${user?.displayName}`;
 
       const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(
-        subject
+        subject,
       )}&body=${encodeURIComponent(body)}`;
 
       const canOpen = await Linking.canOpenURL(mailtoUrl);
@@ -161,7 +168,7 @@ export default function InviteScreen() {
         await Clipboard.setStringAsync(`${subject}\n\n${body}`);
         Alert.alert(
           'Email Not Available',
-          'Invitation copied to clipboard. You can paste it into your email app.'
+          'Invitation copied to clipboard. You can paste it into your email app.',
         );
       }
     } catch (error) {
@@ -180,168 +187,168 @@ export default function InviteScreen() {
     );
   }
 
-    const handleRemoveSubscription = async () => {
-      Alert.alert(
-        'Remove Subscription',
-        'Are you sure you want to remove your subscription?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await FirestoreService.UpdatePlan(
-                  user.id,
-                  false,
-                  '',
-                  '',
-                  '',
-                  null
-                );
-                setUserSelectedPlan(null);
-                setIsPro(false);
-                null;
-                Alert.alert(
-                  'Subscription Removed',
-                  'Your subscription has been removed successfully.'
-                );
-              } catch (error) {
-                console.error('Error removing subscription:', error);
-                Alert.alert('Error', 'Failed to remove subscription.');
-              }
-            },
-          },
-        ]
-      );
-    };
-  
-    // Show interstitial ad before opening AddMemberModal
-    const handleShowAddMember = () => {
-      if (isPro) {
-        setShowAddMemberModal(true);
-        return;
-      }
-      interstitial.load();
-      const adListener = interstitial.addAdEventListener(
-        AdEventType.LOADED,
-        () => {
-          interstitial.show();
-        }
-      );
-      const closeListener = interstitial.addAdEventListener(
-        AdEventType.CLOSED,
-        () => {
-          setShowAddMemberModal(true);
-          adListener();
-          closeListener();
-        }
-      );
-      // If ad fails to load, open modal anyway
-      const errorListener = interstitial.addAdEventListener(
-        AdEventType.ERROR,
-        () => {
-          setShowAddMemberModal(true);
-          adListener();
-          closeListener();
-          errorListener();
-        }
-      );
-    };
-  
-      const handleRemoveMember = async (memberId: string, memberName: string) => {
-        if (memberId === user?.id) {
-          Alert.alert('Error', 'You cannot remove yourself from the group');
-          return;
-        }
-    
-        if (currentGroup?.createdBy !== user?.id) {
-          Alert.alert('Error', 'Only the group admin can remove members');
-          return;
-        }
-    
-        Alert.alert(
-          'Remove Member',
-          `Are you sure you want to remove ${memberName} from the group?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Remove',
-              style: 'destructive',
+  const handleRemoveSubscription = async () => {
+    Alert.alert(
+      'Remove Subscription',
+      'Are you sure you want to remove your subscription?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
           onPress: async () => {
-      try {
-        // Remove member from Firestore group
-        const groupRef = doc(db, 'groups', currentGroup.id);
-        await updateDoc(groupRef, {
-          members: currentGroup.members.filter((id) => id !== memberId),
-        });
-    
-        // Remove from local state
-        setGroupMembers(groupMembers.filter((member) => member.id !== memberId));
-    
-        Alert.alert(
-          'Success',
-          `${memberName} has been removed from the group.`
-        );
-      } catch (error) {
-        Alert.alert('Error', 'Failed to remove member');
-      }
-    }
-    
-            },
-          ]
-        );
-      };
-    
-      // Add member handler
-      const handleAddMember = async (member) => {
-        console.log('adding member')
-        // Find user by email in Firestore
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('email', '==', member.email));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          Alert.alert(
-            'User Not Found',
-            'No user found with this email. Please ask them to sign up first.'
-          );
-          return;
-        }
-    
-        const userDoc = querySnapshot.docs[0];
-        const userId = userDoc.id;
-    console.log('userid', userId)
-        // Add userId to group members in Firestore
-        const groupRef = doc(db, 'groups', currentGroup.id);
-        const groupSnap = await getDoc(groupRef);
-        console.log('snap is', groupSnap)
-        if (!groupSnap.exists()) return;
-    
-        const currentMembers = groupSnap.data().members || [];
-        if (currentMembers.includes(userId)) {
-          Alert.alert('Already a member', 'This user is already in the group.');
-          return;
-        }
-    
-        await updateDoc(groupRef, {
-          members: [...currentMembers, userId],
-        });
-await onRefresh()
+            try {
+              await FirestoreService.UpdatePlan(
+                user.id,
+                false,
+                '',
+                '',
+                '',
+                null,
+              );
+              setUserSelectedPlan(null);
+              setIsPro(false);
+              null;
+              Alert.alert(
+                'Subscription Removed',
+                'Your subscription has been removed successfully.',
+              );
+            } catch (error) {
+              console.error('Error removing subscription:', error);
+              Alert.alert('Error', 'Failed to remove subscription.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
-    
-        // Refresh local members list
-        // await loadGroupMembers();
-        
-        // setTimeout(async() => {
-    
-        Alert.alert('Success', 'Member added to the group!');
+  // Show interstitial ad before opening AddMemberModal
+  const handleShowAddMember = () => {
+    if (isPro) {
+      setShowAddMemberModal(true);
+      return;
+    }
+    interstitial.load();
+    const adListener = interstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        interstitial.show();
+      },
+    );
+    const closeListener = interstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setShowAddMemberModal(true);
+        adListener();
+        closeListener();
+      },
+    );
+    // If ad fails to load, open modal anyway
+    const errorListener = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      () => {
+        setShowAddMemberModal(true);
+        adListener();
+        closeListener();
+        errorListener();
+      },
+    );
+  };
+
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (memberId === user?.id) {
+      Alert.alert('Error', 'You cannot remove yourself from the group');
+      return;
+    }
+
+    if (currentGroup?.createdBy !== user?.id) {
+      Alert.alert('Error', 'Only the group admin can remove members');
+      return;
+    }
+
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from the group?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Remove member from Firestore group
+              const groupRef = doc(db, 'groups', currentGroup.id);
+              await updateDoc(groupRef, {
+                members: currentGroup.members.filter((id) => id !== memberId),
+              });
+
+              // Remove from local state
+              setGroupMembers(
+                groupMembers.filter((member) => member.id !== memberId),
+              );
+
+              Alert.alert(
+                'Success',
+                `${memberName} has been removed from the group.`,
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove member');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Add member handler
+  const handleAddMember = async (member) => {
+    console.log('adding member');
+    // Find user by email in Firestore
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', member.email));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      Alert.alert(
+        'User Not Found',
+        'No user found with this email. Please ask them to sign up first.',
+      );
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userId = userDoc.id;
+    console.log('userid', userId);
+    // Add userId to group members in Firestore
+    const groupRef = doc(db, 'groups', currentGroup.id);
+    const groupSnap = await getDoc(groupRef);
+    console.log('snap is', groupSnap);
+    if (!groupSnap.exists()) return;
+
+    const currentMembers = groupSnap.data().members || [];
+    if (currentMembers.includes(userId)) {
+      Alert.alert('Already a member', 'This user is already in the group.');
+      return;
+    }
+
+    await updateDoc(groupRef, {
+      members: [...currentMembers, userId],
+    });
+    await onRefresh();
+
+    // Refresh local members list
+    // await loadGroupMembers();
+
+    // setTimeout(async() => {
+
+    Alert.alert('Success', 'Member added to the group!');
     // await onRefresh()
-          
-        // }, 1000);
-      };
+
+    // }, 1000);
+  };
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -360,13 +367,12 @@ await onRefresh()
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
+          {/* Add Members (Shifted from Settings) */}
 
-{/* Add Members (Shifted from Settings) */}
-           
           {/* Email Invite Section */}
           <Card style={styles.inviteCard}>
             <View style={styles.cardHeader}>
-              <Mail size={24} color="#6366f1" />
+              <Mail size={24} color='#6366f1' />
               <Text style={styles.cardTitle}>Send Email Invitation</Text>
             </View>
 
@@ -375,15 +381,15 @@ await onRefresh()
                 style={styles.emailInput}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Enter email address"
-                placeholderTextColor="#71717a"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
+                placeholder='Enter email address'
+                placeholderTextColor='#71717a'
+                keyboardType='email-address'
+                autoCapitalize='none'
+                autoComplete='email'
               />
 
               <Button
-                title="Send Invite"
+                title='Send Invite'
                 onPress={sendEmailInvite}
                 loading={loading}
                 style={styles.sendButton}
@@ -391,63 +397,63 @@ await onRefresh()
             </View>
           </Card>
 
-            <View style={styles.membersList}>
-                        {groupMembers.map((member) => (
-                          <View key={member.id} style={styles.memberItem}>
-                            <View style={styles.memberAvatar}>
-                              <Text style={styles.memberInitial}>
-                                {member.displayName.charAt(0).toUpperCase()}
-                              </Text>
-                            </View>
-          
-                            <View style={styles.memberInfo}>
-                              <Text style={styles.memberName}>{member.displayName}</Text>
-                              <Text style={styles.memberEmail}>{member.email}</Text>
-                            </View>
-          
-                            <View style={styles.memberActions}>
-                              {member.id === currentGroup.createdBy && (
-                                <View style={styles.adminBadge}>
-                                  <Text style={styles.adminText}>Admin</Text>
-                                </View>
-                              )}
-          
-                              {currentGroup.createdBy === user.id &&
-                                member.id !== user.id && (
-                                  <Button
-                                    title=""
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={<Trash2 size={16} color="#ef4444" />}
-                                    onPress={() =>
-                                      handleRemoveMember(member.id, member.displayName)
-                                    }
-                                    style={styles.removeButton}
-                                  />
-                                )}
-                            </View>
-                          </View>
-                        ))}
-                        <View>
-                          {groupMembers.length === 0 && (
-                            <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
-                              No members in this group
-                            </Text>
-                          )}
-                          <Button
-                            title="Add Members Manually?"
-                            variant="outline"
-                            size="sm"
-                            onPress={handleShowAddMember}
-                            style={{ marginTop: 18 }}
-                          />
-                        </View>
-                        <AddMemberModal
-                          visible={showAddMemberModal}
-                          onClose={() => setShowAddMemberModal(false)}
-                          onAdd={handleAddMember}
-                        />
-                      </View>
+          <View style={styles.membersList}>
+            {groupMembers.map((member) => (
+              <View key={member.id} style={styles.memberItem}>
+                <View style={styles.memberAvatar}>
+                  <Text style={styles.memberInitial}>
+                    {member.displayName.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+
+                <View style={styles.memberInfo}>
+                  <Text style={styles.memberName}>{member.displayName}</Text>
+                  <Text style={styles.memberEmail}>{member.email}</Text>
+                </View>
+
+                <View style={styles.memberActions}>
+                  {member.id === currentGroup.createdBy && (
+                    <View style={styles.adminBadge}>
+                      <Text style={styles.adminText}>Admin</Text>
+                    </View>
+                  )}
+
+                  {currentGroup.createdBy === user.id &&
+                    member.id !== user.id && (
+                      <Button
+                        title=''
+                        variant='ghost'
+                        size='sm'
+                        icon={<Trash2 size={16} color='#ef4444' />}
+                        onPress={() =>
+                          handleRemoveMember(member.id, member.displayName)
+                        }
+                        style={styles.removeButton}
+                      />
+                    )}
+                </View>
+              </View>
+            ))}
+            <View>
+              {groupMembers.length === 0 && (
+                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
+                  No members in this group
+                </Text>
+              )}
+              <Button
+                title='Add Members Manually?'
+                variant='outline'
+                size='sm'
+                onPress={handleShowAddMember}
+                style={{ marginTop: 18 }}
+              />
+            </View>
+            <AddMemberModal
+              visible={showAddMemberModal}
+              onClose={() => setShowAddMemberModal(false)}
+              onAdd={handleAddMember}
+            />
+          </View>
 
           {/* Share Link Section */}
           {/* <Card style={styles.inviteCard}>
@@ -490,7 +496,7 @@ await onRefresh()
           {/* Current Members Section */}
           <Card style={styles.membersCard}>
             <View style={styles.cardHeader}>
-              <Users size={24} color="#f59e0b" />
+              <Users size={24} color='#f59e0b' />
               <Text style={styles.cardTitle}>
                 Current Members ({groupMembers.length})
               </Text>
@@ -540,13 +546,13 @@ await onRefresh()
           </Card>
         </ScrollView>
         {!isPro && (
-           <BannerAd
-                 unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                 requestOptions={{
-                   requestNonPersonalizedAdsOnly: true,
-                 }}
-               />
+          <BannerAd
+            unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
+            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+            }}
+          />
         )}
       </LinearGradient>
     </View>
@@ -588,7 +594,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
   },
   inviteCard: {
     backgroundColor: '#262626',
@@ -659,7 +665,7 @@ const styles = StyleSheet.create({
   },
   membersList: {
     gap: 16,
-    marginBottom:29
+    marginBottom: 29,
   },
   memberItem: {
     flexDirection: 'row',

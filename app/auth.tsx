@@ -44,12 +44,13 @@ export default function AuthScreen() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [userInfo, setuserInfo] = useState<any>(null);
   const [Loader, setLoader] = useState(false);
-  
+
   useEffect(() => {
     const configureGoogleSignIn = async () => {
       try {
         await GoogleSignin.configure({
-          webClientId: '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
+          webClientId:
+            '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
           offlineAccess: true,
           hostedDomain: '',
           forceCodeForRefreshToken: true,
@@ -59,7 +60,7 @@ export default function AuthScreen() {
         console.error('Google Sign-In configuration error:', error);
       }
     };
-    
+
     configureGoogleSignIn();
   }, []);
 
@@ -83,42 +84,10 @@ export default function AuthScreen() {
     initializeAuth();
   }, []);
 
-  //   if (response?.type === 'success') {
-  //     const { id_token, access_token } = response.authentication as any;
-  //     handleGoogleLogin(id_token, access_token);
-  //   }
-  // }, [response]);
-
-  // const handleGoogleLogin = async (idToken: string, accessToken: string) => {
-  //   setLoading(true);
-  //   try {
-  //     const user = await AuthService.signInWithGoogle(idToken, accessToken);
-  //     await AsyncStorage.setItem('user', JSON.stringify(user));
-
-  //     // ADD THIS LOGIC HERE
-  //     let groups = await FirestoreService.getUserGroups(user.id);
-  //     if (groups.length === 0) {
-  //       await FirestoreService.createGroup({
-  //         name: `${user.displayName || 'My'}'s Group`,
-  //         members: [user.id],
-  //         createdBy: user.id,
-  //         currency: 'USD',
-  //       });
-  //       await refreshGroups();
-  //     }
-
-  //     await refreshGroups();
-  //     router.replace('/(tabs)');
-  //   } catch (error: any) {
-  //     Alert.alert('Error', error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const handleGoogleSignin = async () => {
     console.log('Starting Google Sign-In...');
     setLoader(true);
-    
+
     try {
       // Check if Google Play Services are available
       await GoogleSignin.hasPlayServices({
@@ -160,13 +129,13 @@ export default function AuthScreen() {
           createdBy: savedUser.id,
           currency: 'USD',
         });
-        
+
         // Set marketing consent
         await FirestoreService.setUserMarketingConsent(
           savedUser.id,
           acceptMarketing,
         );
-        
+
         await refreshGroups();
       }
 
@@ -175,7 +144,6 @@ export default function AuthScreen() {
 
       // Navigate to main app
       router.replace('/(tabs)');
-      
     } catch (error: any) {
       console.error('Google Sign-In error:', error);
       setLoader(false);
@@ -185,9 +153,15 @@ export default function AuthScreen() {
       } else if (error.code === statusCodes.IN_PROGRESS) {
         Alert.alert('In Progress', 'Sign-in is already in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Error', 'Google Play Services are not available or outdated. Please update Google Play Services and try again.');
+        Alert.alert(
+          'Error',
+          'Google Play Services are not available or outdated. Please update Google Play Services and try again.',
+        );
       } else {
-        Alert.alert('Sign-In Error', error.message || 'An unexpected error occurred during sign-in');
+        Alert.alert(
+          'Sign-In Error',
+          error.message || 'An unexpected error occurred during sign-in',
+        );
       }
     }
   };
@@ -237,7 +211,11 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+      }}
+    >
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -474,7 +452,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 10,
+    padding: 30,
   },
   header: {
     alignItems: 'center',
@@ -528,7 +506,7 @@ const styles = StyleSheet.create({
     borderColor: '#404040',
   },
   authButton: {
-    marginTop: 16,
+    marginTop: 10,
   },
   footerText: {
     color: '#a1a1aa',

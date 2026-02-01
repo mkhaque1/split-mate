@@ -42,11 +42,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  InterstitialAd
-} from 'react-native-google-mobile-ads';
-
+import { AdEventType, InterstitialAd } from 'react-native-google-mobile-ads';
 
 const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
 
@@ -73,7 +69,7 @@ export default function SettingsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
-  console.log('the members',groupMembers)
+  console.log('the members', groupMembers);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
@@ -98,10 +94,9 @@ export default function SettingsScreen() {
 
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
-      console.log('refresh members are ', members)
+      console.log('refresh members are ', members);
       setGroupMembers(members);
-      return members
-
+      return members;
     } catch (error) {
       console.error('Error loading group members:', error);
     }
@@ -119,32 +114,32 @@ export default function SettingsScreen() {
     setShowCurrencySelector(false);
     Alert.alert('Success', `Currency changed to ${selectedCurrency}`);
   };
-const handleSignOut = () => {
-  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Sign Out',
-      style: 'destructive',
-      onPress: async () => {
-        try {
-          // 1️⃣ Sign out from Firebase
-          await firebaseSignOut(auth);
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // 1️⃣ Sign out from Firebase
+            await firebaseSignOut(auth);
 
-          // 2️⃣ Sign out from Google session
-          await GoogleSignin.signOut();
+            // 2️⃣ Sign out from Google session
+            await GoogleSignin.signOut();
 
-          // 3️⃣ (Optional) Disconnect to clear cached accounts
-          // await GoogleSignin.revokeAccess();
+            // 3️⃣ (Optional) Disconnect to clear cached accounts
+            // await GoogleSignin.revokeAccess();
 
-          router.replace('/auth');
-        } catch (error) {
-          console.log('Sign out error:', error);
-          Alert.alert('Error', 'Failed to sign out');
-        }
+            router.replace('/auth');
+          } catch (error) {
+            console.log('Sign out error:', error);
+            Alert.alert('Error', 'Failed to sign out');
+          }
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (memberId === user?.id) {
@@ -165,56 +160,56 @@ const handleSignOut = () => {
         {
           text: 'Remove',
           style: 'destructive',
-      onPress: async () => {
-  try {
-    // Remove member from Firestore group
-    const groupRef = doc(db, 'groups', currentGroup.id);
-    await updateDoc(groupRef, {
-      members: currentGroup.members.filter((id) => id !== memberId),
-    });
+          onPress: async () => {
+            try {
+              // Remove member from Firestore group
+              const groupRef = doc(db, 'groups', currentGroup.id);
+              await updateDoc(groupRef, {
+                members: currentGroup.members.filter((id) => id !== memberId),
+              });
 
-    // Remove from local state
-    setGroupMembers(groupMembers.filter((member) => member.id !== memberId));
+              // Remove from local state
+              setGroupMembers(
+                groupMembers.filter((member) => member.id !== memberId),
+              );
 
-    Alert.alert(
-      'Success',
-      `${memberName} has been removed from the group.`
-    );
-  } catch (error) {
-    Alert.alert('Error', 'Failed to remove member');
-  }
-}
-
+              Alert.alert(
+                'Success',
+                `${memberName} has been removed from the group.`,
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove member');
+            }
+          },
         },
-      ]
+      ],
     );
   };
 
   // Add member handler
   const handleAddMember = async (member) => {
-    console.log('step1')
+    console.log('step1');
     // Find user by email in Firestore
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', member.email));
     const querySnapshot = await getDocs(q);
-    console.log('step2')
+    console.log('step2');
 
     if (querySnapshot.empty) {
       Alert.alert(
         'User Not Found',
-        'No user found with this email. Please ask them to sign up first.'
+        'No user found with this email. Please ask them to sign up first.',
       );
       return;
     }
 
     const userDoc = querySnapshot.docs[0];
     const userId = userDoc.id;
-    console.log('step3', userId)
-
+    console.log('step3', userId);
 
     // Add userId to group members in Firestore
     const groupRef = doc(db, 'groups', currentGroup.id);
-    console.log('step3', groupRef)
+    console.log('step3', groupRef);
 
     const groupSnap = await getDoc(groupRef);
     if (!groupSnap.exists()) return;
@@ -231,12 +226,12 @@ const handleSignOut = () => {
 
     // Refresh local members list
     // await loadGroupMembers();
-    
+
     // setTimeout(async() => {
-await onRefresh()
+    await onRefresh();
 
     Alert.alert('Success', 'Member added to the group!');
-      
+
     // }, 1000);
   };
 
@@ -286,14 +281,14 @@ await onRefresh()
                 '',
                 '',
                 '',
-                null
+                null,
               );
               setUserSelectedPlan(null);
               setIsPro(false);
               null;
               Alert.alert(
                 'Subscription Removed',
-                'Your subscription has been removed successfully.'
+                'Your subscription has been removed successfully.',
               );
             } catch (error) {
               console.error('Error removing subscription:', error);
@@ -301,7 +296,7 @@ await onRefresh()
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -316,7 +311,7 @@ await onRefresh()
       AdEventType.LOADED,
       () => {
         interstitial.show();
-      }
+      },
     );
     const closeListener = interstitial.addAdEventListener(
       AdEventType.CLOSED,
@@ -324,7 +319,7 @@ await onRefresh()
         setShowAddMemberModal(true);
         adListener();
         closeListener();
-      }
+      },
     );
     // If ad fails to load, open modal anyway
     const errorListener = interstitial.addAdEventListener(
@@ -334,13 +329,13 @@ await onRefresh()
         adListener();
         closeListener();
         errorListener();
-      }
+      },
     );
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -360,7 +355,7 @@ await onRefresh()
           {/* User Profile Section */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <User size={24} color="#6366f1" />
+              <User size={24} color='#6366f1' />
               <Text style={styles.sectionTitle}>Profile</Text>
             </View>
 
@@ -433,7 +428,7 @@ await onRefresh()
                   >
                     <Text style={styles.userName}>{user.displayName}</Text>
                     <TouchableOpacity onPress={() => setEditingName(true)}>
-                      <Pencil size={18} color="#6366f1" />
+                      <Pencil size={18} color='#6366f1' />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -445,7 +440,7 @@ await onRefresh()
           {/* Currency Settings */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <DollarSign size={24} color="#10b981" />
+              <DollarSign size={24} color='#10b981' />
               <Text style={styles.sectionTitle}>Currency</Text>
             </View>
 
@@ -458,9 +453,9 @@ await onRefresh()
               </View>
 
               <Button
-                title="Change"
-                variant="outline"
-                size="sm"
+                title='Change'
+                variant='outline'
+                size='sm'
                 onPress={() => setShowCurrencySelector(true)}
               />
             </View>
@@ -469,7 +464,7 @@ await onRefresh()
           {/* Group Members */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <Users size={24} color="#f59e0b" />
+              <Users size={24} color='#f59e0b' />
               <Text style={styles.sectionTitle}>
                 Group Members ({groupMembers.length})
               </Text>
@@ -499,10 +494,10 @@ await onRefresh()
                     {currentGroup.createdBy === user.id &&
                       member.id !== user.id && (
                         <Button
-                          title=""
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash2 size={16} color="#ef4444" />}
+                          title=''
+                          variant='ghost'
+                          size='sm'
+                          icon={<Trash2 size={16} color='#ef4444' />}
                           onPress={() =>
                             handleRemoveMember(member.id, member.displayName)
                           }
@@ -519,9 +514,9 @@ await onRefresh()
                   </Text>
                 )}
                 <Button
-                  title="Add Members Manually?"
-                  variant="outline"
-                  size="sm"
+                  title='Add Members Manually?'
+                  variant='outline'
+                  size='sm'
                   onPress={handleShowAddMember}
                   style={{ marginTop: 18 }}
                 />
@@ -541,8 +536,8 @@ await onRefresh()
                 <Text style={styles.sectionTitle}>Remove Ads</Text>
               </View>
               <Button
-                title="Remove Ads"
-                variant="outline"
+                title='Remove Ads'
+                variant='outline'
                 onPress={() => setShowSubscribe(true)}
                 style={{ marginTop: 8 }}
               />
@@ -608,14 +603,14 @@ await onRefresh()
           {/* Actions */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <SettingsIcon size={24} color="#ef4444" />
+              <SettingsIcon size={24} color='#ef4444' />
               <Text style={styles.sectionTitle}>Actions</Text>
             </View>
 
             <Button
-              title="Sign Out"
-              variant="outline"
-              icon={<LogOut size={20} color="#ef4444" />}
+              title='Sign Out'
+              variant='outline'
+              icon={<LogOut size={20} color='#ef4444' />}
               onPress={handleSignOut}
               style={styles.signOutButton}
             />
@@ -660,7 +655,7 @@ await onRefresh()
         {showSubscribe && <Subscribe onClose={() => setShowSubscribe(false)} />}
 
         {/* Privacy Policy Modal */}
-        <Modal visible={showPrivacy} animationType="slide" transparent>
+        <Modal visible={showPrivacy} animationType='slide' transparent>
           <View
             style={{
               flex: 1,
@@ -696,8 +691,8 @@ await onRefresh()
                   functionality. For more details, please contact support.
                 </Text>
                 <Button
-                  size="sm"
-                  title="Close"
+                  size='sm'
+                  title='Close'
                   onPress={() => setShowPrivacy(false)}
                 />
               </ScrollView>
@@ -761,7 +756,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
   },
   sectionCard: {
     backgroundColor: '#262626',

@@ -24,7 +24,7 @@ import {
   AdEventType,
   BannerAd,
   BannerAdSize,
-  InterstitialAd
+  InterstitialAd,
 } from 'react-native-google-mobile-ads';
 const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
 
@@ -52,7 +52,7 @@ export default function SummaryScreen() {
     if (groupMembers.length > 0 && expenses.length > 0) {
       const calculatedBalances = CalculationService.calculateGroupBalances(
         expenses,
-        groupMembers
+        groupMembers,
       );
       setBalances(calculatedBalances);
     } else {
@@ -130,7 +130,7 @@ export default function SummaryScreen() {
               ${balances
                 .map((balance) => {
                   const member = groupMembers.find(
-                    (m) => m.id === balance.userId
+                    (m) => m.id === balance.userId,
                   );
                   const isPositive = balance.amount >= 0;
                   return `
@@ -138,8 +138,8 @@ export default function SummaryScreen() {
                     <span>${member?.displayName || 'Unknown'}</span>
                     <span class="${isPositive ? 'positive' : 'negative'}">
                       ${isPositive ? '+' : ''}${
-                    currentGroup.currency
-                  } ${balance.amount.toFixed(2)}
+                        currentGroup.currency
+                      } ${balance.amount.toFixed(2)}
                     </span>
                   </div>
                 `;
@@ -153,15 +153,15 @@ export default function SummaryScreen() {
                 .slice(0, 20)
                 .map((expense) => {
                   const payer = groupMembers.find(
-                    (m) => m.id === expense.paidBy
+                    (m) => m.id === expense.paidBy,
                   );
                   return `
                   <div class="expense-item">
                     <div class="expense-header">
                       <span>${expense.title}</span>
                       <span>${currentGroup.currency} ${expense.amount.toFixed(
-                    2
-                  )}</span>
+                        2,
+                      )}</span>
                     </div>
                     <div class="expense-details">
                       Paid by: ${payer?.displayName || 'Unknown'} • 
@@ -185,7 +185,7 @@ export default function SummaryScreen() {
                   }</span>
                   <span>${currentGroup.currency} ${amount.toFixed(2)}</span>
                 </div>
-              `
+              `,
                 )
                 .join('')}
             </div>
@@ -241,7 +241,7 @@ export default function SummaryScreen() {
       AdEventType.LOADED,
       () => {
         interstitial.show();
-      }
+      },
     );
     const closeListener = interstitial.addAdEventListener(
       AdEventType.CLOSED,
@@ -249,7 +249,7 @@ export default function SummaryScreen() {
         generatePDFReport();
         adListener();
         closeListener();
-      }
+      },
     );
     // If ad fails to load, proceed anyway
     const errorListener = interstitial.addAdEventListener(
@@ -259,13 +259,13 @@ export default function SummaryScreen() {
         adListener();
         closeListener();
         errorListener();
-      }
+      },
     );
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -284,8 +284,8 @@ export default function SummaryScreen() {
         >
           {/* Export Button */}
           <Button
-            title="Download PDF Report"
-            icon={<Download size={20} color="#ffffff" />}
+            title='Download PDF Report'
+            icon={<Download size={20} color='#ffffff' />}
             onPress={handleDownloadReport}
             loading={generating}
             style={styles.exportButton}
@@ -295,7 +295,7 @@ export default function SummaryScreen() {
           <View style={styles.statsRow}>
             <Card style={styles.statCard}>
               <View style={styles.statHeader}>
-                <TrendingUp size={20} color="#6366f1" />
+                <TrendingUp size={20} color='#6366f1' />
                 <Text style={styles.statLabel}>Total</Text>
               </View>
               <Text style={styles.statAmount}>
@@ -305,7 +305,7 @@ export default function SummaryScreen() {
 
             <Card style={styles.statCard}>
               <View style={styles.statHeader}>
-                <Calendar size={20} color="#10b981" />
+                <Calendar size={20} color='#10b981' />
                 <Text style={styles.statLabel}>Expenses</Text>
               </View>
               <Text style={styles.statAmount}>{expenses.length}</Text>
@@ -313,7 +313,7 @@ export default function SummaryScreen() {
 
             <Card style={styles.statCard}>
               <View style={styles.statHeader}>
-                <Users size={20} color="#f59e0b" />
+                <Users size={20} color='#f59e0b' />
                 <Text style={styles.statLabel}>Members</Text>
               </View>
               <Text style={styles.statAmount}>{groupMembers.length}</Text>
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   header: {
-    paddingBottom: 10,
+    paddingVertical: 30,
     paddingTop: 60,
     alignItems: 'center',
   },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
   },
   exportButton: {
     marginBottom: 24,
