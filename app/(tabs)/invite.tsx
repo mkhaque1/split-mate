@@ -7,6 +7,7 @@ import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
 import * as Clipboard from 'expo-clipboard';
 
+import { BannerAdComponent } from '@/components/AdMobManager';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -32,19 +33,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  BannerAd,
-  BannerAdSize,
-  InterstitialAd,
-} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 export default function InviteScreen() {
   const { user, currentGroup, refreshGroups } = useApp();
   const [email, setEmail] = useState('');
@@ -224,36 +214,23 @@ export default function InviteScreen() {
   };
 
   // Show interstitial ad before opening AddMemberModal
-  const handleShowAddMember = () => {
+  const handleShowAddMember = async () => {
     if (isPro) {
       setShowAddMemberModal(true);
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      },
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
         setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-      },
-    );
-    // If ad fails to load, open modal anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-        errorListener();
-      },
-    );
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddMemberModal(true);
+    }
   };
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
@@ -545,15 +522,7 @@ export default function InviteScreen() {
             </View>
           </Card>
         </ScrollView>
-        {!isPro && (
-          <BannerAd
-            unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-            requestOptions={{
-              requestNonPersonalizedAdsOnly: true,
-            }}
-          />
-        )}
+        {!isPro && <BannerAdComponent />}
       </LinearGradient>
     </View>
   );

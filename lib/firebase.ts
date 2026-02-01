@@ -24,7 +24,8 @@ const firebaseConfig = {
   storageBucket: FIREBASE_STORAGE_BUCKET || 'split-mate-app-1f212.firebasestorage.app',
   messagingSenderId: FIREBASE_MESSAGING_SENDER_ID || '942853203229',
   appId: FIREBASE_APP_ID || '1:942853203229:android:145e5ecee3020c97e32df4',
-  measurementId: FIREBASE_MEASUREMENT_ID || 'G-XXXXXXXXXX',
+  // Only include measurementId if it's available and not a placeholder
+  ...(FIREBASE_MEASUREMENT_ID && FIREBASE_MEASUREMENT_ID !== 'G-XXXXXXXXXX' ? { measurementId: FIREBASE_MEASUREMENT_ID } : {}),
 };
 
 console.log('Firebase Config:', {

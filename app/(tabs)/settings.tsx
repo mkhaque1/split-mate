@@ -1,4 +1,5 @@
 import AddMemberModal from '@/components/AddMemberModal';
+import { interstitialAdManager } from '@/components/AdMobManager';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import CurrencySelector from '@/components/CurrencySelector';
@@ -42,13 +43,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AdEventType, InterstitialAd } from 'react-native-google-mobile-ads';
-
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -301,36 +295,23 @@ export default function SettingsScreen() {
   };
 
   // Show interstitial ad before opening AddMemberModal
-  const handleShowAddMember = () => {
+  const handleShowAddMember = async () => {
     if (isPro) {
       setShowAddMemberModal(true);
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      },
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
         setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-      },
-    );
-    // If ad fails to load, open modal anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-        errorListener();
-      },
-    );
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddMemberModal(true);
+    }
   };
 
   return (

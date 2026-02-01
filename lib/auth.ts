@@ -42,30 +42,35 @@ export class AuthService {
   }
 
   static async signIn(email: string, password: string): Promise<User> {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const firebaseUser = userCredential.user;
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const firebaseUser = userCredential.user;
 
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (userDoc.exists()) {
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      if (userDoc.exists()) {
+        return {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          displayName: firebaseUser.displayName || '',
+          // avatar: firebaseUser.photoURL || undefined,
+          ...userDoc.data(),
+        };
+      }
+
       return {
         id: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName: firebaseUser.displayName || '',
         // avatar: firebaseUser.photoURL || undefined,
-        ...userDoc.data(),
       };
+    } catch (error: any) {
+      console.error('Sign-in error:', error);
+      throw error; // Re-throw to let the UI handle the specific error
     }
-
-    return {
-      id: firebaseUser.uid,
-      email: firebaseUser.email!,
-      displayName: firebaseUser.displayName || '',
-      // avatar: firebaseUser.photoURL || undefined,
-    };
   }
 
   static async signUp(
@@ -73,24 +78,29 @@ export class AuthService {
     password: string,
     displayName: string
   ): Promise<User> {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const firebaseUser = userCredential.user;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const firebaseUser = userCredential.user;
 
-    await updateProfile(firebaseUser, { displayName });
+      await updateProfile(firebaseUser, { displayName });
 
-    const userData: User = {
-      id: firebaseUser.uid,
-      email: firebaseUser.email!,
-      displayName,
-      // avatar: undefined,
-    };
+      const userData: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        displayName,
+        // avatar: undefined,
+      };
 
-    await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-    return userData;
+      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+      return userData;
+    } catch (error: any) {
+      console.error('Sign-up error:', error);
+      throw error; // Re-throw to let the UI handle the specific error
+    }
   }
 
   static async signOut(): Promise<void> {

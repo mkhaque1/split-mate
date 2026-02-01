@@ -1,8 +1,8 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useFonts } from 'expo-font';
@@ -12,8 +12,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import {
-  MobileAds
+    MobileAds
 } from 'react-native-google-mobile-ads';
+import { AppOpenAdProvider } from '../components/AppOpenAdProvider';
 import { AppProvider } from '../context/AppContext';
 import { useFrameworkReady } from '../hooks/useFramewrokReady';
 LogBox.ignoreAllLogs();
@@ -52,12 +53,14 @@ export default function RootLayout() {
   return (
     <StripeProvider publishableKey="pk_live_51Riu1WCX5uApISzR8Ltiju6VwWrp2mggEOKv3mjqAv2pBWRbJ7uVZYrpTTgUm1KFoJdoqr9KOKRHJSMw3w1d3WDX007hPgaHC5">
       <AppProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="light" />
+        <AppOpenAdProvider showOnAppStart={true}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="auth" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="light" />
+        </AppOpenAdProvider>
       </AppProvider>
     </StripeProvider>
   );

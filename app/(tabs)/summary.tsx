@@ -1,3 +1,4 @@
+import { BannerAdComponent } from '@/components/AdMobManager';
 import BalanceItem from '@/components/BalanceItem';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -20,17 +21,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  BannerAd,
-  BannerAdSize,
-  InterstitialAd,
-} from 'react-native-google-mobile-ads';
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 
 export default function SummaryScreen() {
   const { user, currentGroup, expenses, refreshExpenses } = useApp();
@@ -231,36 +221,23 @@ export default function SummaryScreen() {
   const { isPro } = useApp();
 
   // Show interstitial ad before generating PDF report
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     if (isPro) {
       generatePDFReport();
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      },
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then generate report
+      setTimeout(() => {
         generatePDFReport();
-        adListener();
-        closeListener();
-      },
-    );
-    // If ad fails to load, proceed anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        generatePDFReport();
-        adListener();
-        closeListener();
-        errorListener();
-      },
-    );
+      }, 500);
+    } else {
+      // Ad not available, generate report immediately
+      generatePDFReport();
+    }
   };
 
   return (
@@ -383,15 +360,7 @@ export default function SummaryScreen() {
             </View>
           )}
         </ScrollView>
-        {!isPro && (
-          <BannerAd
-            unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-            requestOptions={{
-              requestNonPersonalizedAdsOnly: true,
-            }}
-          />
-        )}
+        {!isPro && <BannerAdComponent />}
       </LinearGradient>
     </View>
   );

@@ -1,4 +1,5 @@
 import AddExpenseModal from '@/components/AddExpenseModal';
+import { BannerAdComponent, interstitialAdManager } from '@/components/AdMobManager';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import ExpenseItem from '@/components/ExpenseItem';
@@ -17,18 +18,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  BannerAd,
-  BannerAdSize,
-  InterstitialAd,
-} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 
 export default function ExpensesScreen() {
   const { user, currentGroup, expenses, refreshExpenses, refreshGroups } =
@@ -125,36 +116,23 @@ export default function ExpensesScreen() {
   const userBalance = userPaidTotal - userOwedTotal;
 
   // Show interstitial ad before opening AddExpenseModal
-  const handleShowAddExpense = () => {
+  const handleShowAddExpense = async () => {
     if (isPro) {
       setShowAddExpense(true);
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      },
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
         setShowAddExpense(true);
-        adListener();
-        closeListener();
-      },
-    );
-    // If ad fails to load, open modal anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        setShowAddExpense(true);
-        adListener();
-        closeListener();
-        errorListener();
-      },
-    );
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddExpense(true);
+    }
   };
 
   return (
@@ -249,13 +227,7 @@ export default function ExpensesScreen() {
         {/* Fixed bottom ad, like summary.tsx */}
         {!isPro && (
           <View style={styles.footer}>
-            <BannerAd
-              unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-              requestOptions={{
-                requestNonPersonalizedAdsOnly: true,
-              }}
-            />
+            <BannerAdComponent />
           </View>
         )}
       </LinearGradient>

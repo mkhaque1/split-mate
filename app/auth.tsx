@@ -4,6 +4,7 @@ import PrivacyModal from '@/components/PrivacyModal';
 import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
+import { getAuthErrorMessage } from '@/utils/errorMessages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -148,31 +149,30 @@ export default function AuthScreen() {
       console.error('Google Sign-In error:', error);
       setLoader(false);
 
+      let errorMessage = 'Unable to sign in with Google. Please try again.';
+
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        Alert.alert('Cancelled', 'Sign-in was cancelled');
+        // User cancelled - don't show error, just return
+        return;
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        Alert.alert('In Progress', 'Sign-in is already in progress');
+        errorMessage = 'Sign-in is already in progress. Please wait.';
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert(
-          'Error',
-          'Google Play Services are not available or outdated. Please update Google Play Services and try again.',
-        );
-      } else {
-        Alert.alert(
-          'Sign-In Error',
-          error.message || 'An unexpected error occurred during sign-in',
-        );
+        errorMessage = 'Google Play Services are not available or outdated. Please update Google Play Services and try again.';
+      } else if (error.message) {
+        errorMessage = getGoogleSignInErrorMessage(error);
       }
+
+      Alert.alert('Google Sign-In Error', errorMessage, [{ text: 'OK', style: 'default' }]);
     }
   };
 
   const handleAuth = async () => {
     if (!email || !password || (isSignUp && !displayName)) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Missing Information', 'Please fill in all required fields to continue.');
       return;
     }
     if (isSignUp && !acceptedPrivacy) {
-      Alert.alert('Error', 'You must accept the Privacy Policy to continue.');
+      Alert.alert('Privacy Policy Required', 'You must accept the Privacy Policy to create an account.');
       return;
     }
     setLoading(true);
@@ -204,7 +204,16 @@ export default function AuthScreen() {
       }, 2000);
       setLoading(false);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Authentication error:', error);
+      
+      // Professional error messages based on Firebase error codes
+      const errorMessage = error.code ? getAuthErrorMessage(error.code) : (error.message || 'An unexpected error occurred. Please try again.');
+      
+      Alert.alert(
+        isSignUp ? 'Sign Up Failed' : 'Sign In Failed', 
+        errorMessage,
+        [{ text: 'OK', style: 'default' }]
+      );
     } finally {
       setLoading(false);
     }
