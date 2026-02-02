@@ -3,7 +3,7 @@ import 'dotenv/config';
 export default {
   expo: {
     name: 'Split-mate',
-    slug: 'Split-mate',
+    slug: 'split-mate',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.jpg',
