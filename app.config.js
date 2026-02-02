@@ -53,7 +53,7 @@ export default {
       [
         'expo-splash-screen',
         {
-          image: './assets/images/icon.jpg',
+          image: './assets/images/logo.gif',
           imageWidth: 200,
           resizeMode: 'contain',
           backgroundColor: '#ffffff',

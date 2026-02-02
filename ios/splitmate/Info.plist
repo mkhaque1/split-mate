@@ -28,12 +28,20 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>splitmate</string>
-          <string>com.mysplitmate.app</string>
+          <string>com.splitmate.app</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+split-mate</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>GADApplicationIdentifier</key>
+    <string>ca-app-pub-8613339095164526~7201972596</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
