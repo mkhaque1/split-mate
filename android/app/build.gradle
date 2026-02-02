@@ -92,7 +92,7 @@ android {
         applicationId 'com.mysplitmate.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
+        versionCode 9
         versionName "1.0.2"
     }
     signingConfigs {

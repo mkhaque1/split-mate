@@ -3,7 +3,7 @@ import 'dotenv/config';
 export default {
   expo: {
     name: 'Split-mate',
-    slug: 'Split-mate',
+    slug: 'split-mate',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.jpg',
@@ -29,7 +29,7 @@ export default {
   
 
       edgeToEdgeEnabled: true,
-      package: 'com.mysplitmate.app',
+      package: 'com.splitmate.app',
       config: {
         googleMobileAds: {
           appId: 'ca-app-pub-8613339095164526~7201972596',
@@ -42,6 +42,23 @@ export default {
       favicon: './assets/images/favicon.jpg',
     },
     plugins: [
+       [
+    "expo-build-properties",
+    {
+      android: {
+        manifest: {
+          application: {
+            "meta-data": [
+              {
+                "android:name": "com.google.android.gms.ads.APPLICATION_ID",
+                "android:value": "ca-app-pub-8613339095164526~7201972596"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
       'expo-router',
       'expo-font',
       'expo-web-browser',
