@@ -1,46 +1,38 @@
-import AddMemberModal from '@/components/AddMemberModal';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import GradientText from '@/components/GradientText';
 import { db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
-import * as Clipboard from 'expo-clipboard';
+import { copyInviteLink, shareGroupInvite } from '@/utils/shareUtils';
 
+import { BannerAdComponent, interstitialAdManager } from '@/components/AdMobManager';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { Mail, Trash2, Users } from 'lucide-react-native';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
+import { Copy, Share2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Platform,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  BannerAd,
-  BannerAdSize,
-  InterstitialAd
-} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 
-
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 export default function InviteScreen() {
   const { user, currentGroup, refreshGroups } = useApp();
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
@@ -48,6 +40,27 @@ export default function InviteScreen() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const { isPro } = useApp();
+
+  // Share group invite handlers
+  const handleShareGroup = async () => {
+    if (!currentGroup || !user) return;
+    
+    const success = await shareGroupInvite({
+      groupId: currentGroup.id,
+      groupName: currentGroup.name,
+      inviterName: user.displayName,
+    });
+    
+    if (success) {
+      console.log('Group invite shared successfully');
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!currentGroup) return;
+    
+    await copyInviteLink(currentGroup.id);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -75,103 +88,6 @@ export default function InviteScreen() {
     setRefreshing(false);
   };
 
-  const generateInviteLink = () => {
-    if (!currentGroup) return '';
-
-    const baseUrl = Linking.createURL('');
-    return `${baseUrl}invite/${currentGroup.id}`;
-  };
-
-  const copyInviteLink = async () => {
-    const inviteLink = generateInviteLink();
-    try {
-      await Clipboard.setStringAsync(inviteLink);
-      Alert.alert('Success', 'Invite link copied to clipboard!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to copy invite link');
-    }
-  };
-
-  const shareInviteLink = async () => {
-    const inviteLink = generateInviteLink();
-    const message = `Join my expense group "${currentGroup?.name}" on SplitMate: ${inviteLink}`;
-
-    try {
-      if (Platform.OS !== 'web') {
-        // Use native Share API on mobile
-        await Share.share({
-          message: message,
-          url: inviteLink,
-          title: 'Join my SplitMate group',
-        });
-      } else {
-        // Fallback for web
-        if (navigator.share) {
-          await navigator.share({
-            title: 'Join my SplitMate group',
-            text: message,
-            url: inviteLink,
-          });
-        } else {
-          await Clipboard.setStringAsync(message);
-          Alert.alert('Success', 'Invite message copied to clipboard!');
-        }
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback to clipboard
-      try {
-        await Clipboard.setStringAsync(message);
-        Alert.alert('Success', 'Invite message copied to clipboard!');
-      } catch (clipboardError) {
-        Alert.alert('Error', 'Failed to share invite');
-      }
-    }
-  };
-
-  const sendEmailInvite = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter an email address');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const inviteLink = generateInviteLink();
-      const subject = `Join "${currentGroup?.name}" on SplitMate`;
-      const body = `Hi!\n\nYou've been invited to join the expense group "${currentGroup?.name}" on SplitMate.\n\nClick the link below to join:\n${inviteLink}\n\nSplitMate makes it easy to track and split shared expenses with friends, roommates, and family.\n\nSee you there!\n${user?.displayName}`;
-
-      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(body)}`;
-
-      const canOpen = await Linking.canOpenURL(mailtoUrl);
-      if (canOpen) {
-        await Linking.openURL(mailtoUrl);
-        setEmail('');
-        Alert.alert('Success', 'Email app opened with invitation');
-      } else {
-        // Fallback to copying the invitation text
-        await Clipboard.setStringAsync(`${subject}\n\n${body}`);
-        Alert.alert(
-          'Email Not Available',
-          'Invitation copied to clipboard. You can paste it into your email app.'
-        );
-      }
-    } catch (error) {
-      console.error('Error sending email invite:', error);
-      Alert.alert('Error', 'Failed to send email invitation');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!user || !currentGroup) {
     return (
       <View style={styles.loadingContainer}>
@@ -180,168 +96,119 @@ export default function InviteScreen() {
     );
   }
 
-    const handleRemoveSubscription = async () => {
-      Alert.alert(
-        'Remove Subscription',
-        'Are you sure you want to remove your subscription?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await FirestoreService.UpdatePlan(
-                  user.id,
-                  false,
-                  '',
-                  '',
-                  '',
-                  null
-                );
-                setUserSelectedPlan(null);
-                setIsPro(false);
-                null;
-                Alert.alert(
-                  'Subscription Removed',
-                  'Your subscription has been removed successfully.'
-                );
-              } catch (error) {
-                console.error('Error removing subscription:', error);
-                Alert.alert('Error', 'Failed to remove subscription.');
-              }
-            },
-          },
-        ]
-      );
-    };
-  
-    // Show interstitial ad before opening AddMemberModal
-    const handleShowAddMember = () => {
-      if (isPro) {
-        setShowAddMemberModal(true);
-        return;
-      }
-      interstitial.load();
-      const adListener = interstitial.addAdEventListener(
-        AdEventType.LOADED,
-        () => {
-          interstitial.show();
-        }
-      );
-      const closeListener = interstitial.addAdEventListener(
-        AdEventType.CLOSED,
-        () => {
-          setShowAddMemberModal(true);
-          adListener();
-          closeListener();
-        }
-      );
-      // If ad fails to load, open modal anyway
-      const errorListener = interstitial.addAdEventListener(
-        AdEventType.ERROR,
-        () => {
-          setShowAddMemberModal(true);
-          adListener();
-          closeListener();
-          errorListener();
-        }
-      );
-    };
-  
-      const handleRemoveMember = async (memberId: string, memberName: string) => {
-        if (memberId === user?.id) {
-          Alert.alert('Error', 'You cannot remove yourself from the group');
-          return;
-        }
-    
-        if (currentGroup?.createdBy !== user?.id) {
-          Alert.alert('Error', 'Only the group admin can remove members');
-          return;
-        }
-    
-        Alert.alert(
-          'Remove Member',
-          `Are you sure you want to remove ${memberName} from the group?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Remove',
-              style: 'destructive',
-          onPress: async () => {
-      try {
-        // Remove member from Firestore group
-        const groupRef = doc(db, 'groups', currentGroup.id);
-        await updateDoc(groupRef, {
-          members: currentGroup.members.filter((id) => id !== memberId),
-        });
-    
-        // Remove from local state
-        setGroupMembers(groupMembers.filter((member) => member.id !== memberId));
-    
-        Alert.alert(
-          'Success',
-          `${memberName} has been removed from the group.`
-        );
-      } catch (error) {
-        Alert.alert('Error', 'Failed to remove member');
-      }
+  // Show interstitial ad before opening AddMemberModal
+  const handleShowAddMember = async () => {
+    if (isPro) {
+      setShowAddMemberModal(true);
+      return;
     }
     
-            },
-          ]
-        );
-      };
-    
-      // Add member handler
-      const handleAddMember = async (member) => {
-        console.log('adding member')
-        // Find user by email in Firestore
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('email', '==', member.email));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          Alert.alert(
-            'User Not Found',
-            'No user found with this email. Please ask them to sign up first.'
-          );
-          return;
-        }
-    
-        const userDoc = querySnapshot.docs[0];
-        const userId = userDoc.id;
-    console.log('userid', userId)
-        // Add userId to group members in Firestore
-        const groupRef = doc(db, 'groups', currentGroup.id);
-        const groupSnap = await getDoc(groupRef);
-        console.log('snap is', groupSnap)
-        if (!groupSnap.exists()) return;
-    
-        const currentMembers = groupSnap.data().members || [];
-        if (currentMembers.includes(userId)) {
-          Alert.alert('Already a member', 'This user is already in the group.');
-          return;
-        }
-    
-        await updateDoc(groupRef, {
-          members: [...currentMembers, userId],
-        });
-await onRefresh()
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
+        setShowAddMemberModal(true);
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddMemberModal(true);
+    }
+  };
 
-    
-        // Refresh local members list
-        // await loadGroupMembers();
-        
-        // setTimeout(async() => {
-    
-        Alert.alert('Success', 'Member added to the group!');
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (memberId === user?.id) {
+      Alert.alert('Error', 'You cannot remove yourself from the group');
+      return;
+    }
+
+    if (currentGroup?.createdBy !== user?.id) {
+      Alert.alert('Error', 'Only the group admin can remove members');
+      return;
+    }
+
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from the group?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Remove member from Firestore group
+              const groupRef = doc(db, 'groups', currentGroup.id);
+              await updateDoc(groupRef, {
+                members: currentGroup.members.filter((id) => id !== memberId),
+              });
+
+              // Remove from local state
+              setGroupMembers(
+                groupMembers.filter((member) => member.id !== memberId),
+              );
+
+              Alert.alert(
+                'Success',
+                `${memberName} has been removed from the group.`,
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove member');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Add member handler
+  const handleAddMember = async (member: any) => {
+    console.log('adding member');
+    // Find user by email in Firestore
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', member.email));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      Alert.alert(
+        'User Not Found',
+        'No user found with this email. Please ask them to sign up first.',
+      );
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userId = userDoc.id;
+    console.log('userid', userId);
+    // Add userId to group members in Firestore
+    const groupRef = doc(db, 'groups', currentGroup.id);
+    const groupSnap = await getDoc(groupRef);
+    console.log('snap is', groupSnap);
+    if (!groupSnap.exists()) return;
+
+    const currentMembers = groupSnap.data().members || [];
+    if (currentMembers.includes(userId)) {
+      Alert.alert('Already a member', 'This user is already in the group.');
+      return;
+    }
+
+    await updateDoc(groupRef, {
+      members: [...currentMembers, userId],
+    });
+    await onRefresh();
+
+    // Refresh local members list
+    // await loadGroupMembers();
+
+    // setTimeout(async() => {
+
+    Alert.alert('Success', 'Member added to the group!');
     // await onRefresh()
-          
-        // }, 1000);
-      };
+
+    // }, 1000);
+  };
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -360,94 +227,47 @@ await onRefresh()
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
+          {/* Add Members (Shifted from Settings) */}
 
-{/* Add Members (Shifted from Settings) */}
-           
-          {/* Email Invite Section */}
+          {/* Share Invite Section */}
           <Card style={styles.inviteCard}>
             <View style={styles.cardHeader}>
-              <Mail size={24} color="#6366f1" />
-              <Text style={styles.cardTitle}>Send Email Invitation</Text>
+              <Share2 size={24} color='#8b5cf6' />
+              <Text style={styles.cardTitle}>Share Group Invite</Text>
             </View>
 
-            <View style={styles.emailSection}>
-              <TextInput
-                style={styles.emailInput}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter email address"
-                placeholderTextColor="#71717a"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-
-              <Button
-                title="Send Invite"
-                onPress={sendEmailInvite}
-                loading={loading}
-                style={styles.sendButton}
-              />
+            <View style={styles.shareSection}>
+              <Text style={styles.shareDescription}>
+                Invite friends to join "{currentGroup.name}" by sharing the group link
+              </Text>
+              
+              <View style={styles.shareButtons}>
+                <Button
+                  title='Share Invite'
+                  variant='primary'
+                  size='sm'
+                  icon={<Share2 size={16} color='#ffffff' />}
+                  onPress={handleShareGroup}
+                  style={styles.shareButton}
+                />
+                
+                <Button
+                  title='Copy Link'
+                  variant='outline'
+                  size='sm'
+                  icon={<Copy size={16} color='#6366f1' />}
+                  onPress={handleCopyInviteLink}
+                  style={styles.shareButton}
+                />
+              </View>
+              
+              <Text style={styles.shareNote}>
+                💡 Friends will be prompted to download the app if they don't have it
+              </Text>
             </View>
           </Card>
 
-            <View style={styles.membersList}>
-                        {groupMembers.map((member) => (
-                          <View key={member.id} style={styles.memberItem}>
-                            <View style={styles.memberAvatar}>
-                              <Text style={styles.memberInitial}>
-                                {member.displayName.charAt(0).toUpperCase()}
-                              </Text>
-                            </View>
-          
-                            <View style={styles.memberInfo}>
-                              <Text style={styles.memberName}>{member.displayName}</Text>
-                              <Text style={styles.memberEmail}>{member.email}</Text>
-                            </View>
-          
-                            <View style={styles.memberActions}>
-                              {member.id === currentGroup.createdBy && (
-                                <View style={styles.adminBadge}>
-                                  <Text style={styles.adminText}>Admin</Text>
-                                </View>
-                              )}
-          
-                              {currentGroup.createdBy === user.id &&
-                                member.id !== user.id && (
-                                  <Button
-                                    title=""
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={<Trash2 size={16} color="#ef4444" />}
-                                    onPress={() =>
-                                      handleRemoveMember(member.id, member.displayName)
-                                    }
-                                    style={styles.removeButton}
-                                  />
-                                )}
-                            </View>
-                          </View>
-                        ))}
-                        <View>
-                          {groupMembers.length === 0 && (
-                            <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
-                              No members in this group
-                            </Text>
-                          )}
-                          <Button
-                            title="Add Members Manually?"
-                            variant="outline"
-                            size="sm"
-                            onPress={handleShowAddMember}
-                            style={{ marginTop: 18 }}
-                          />
-                        </View>
-                        <AddMemberModal
-                          visible={showAddMemberModal}
-                          onClose={() => setShowAddMemberModal(false)}
-                          onAdd={handleAddMember}
-                        />
-                      </View>
+        
 
           {/* Share Link Section */}
           {/* <Card style={styles.inviteCard}>
@@ -490,7 +310,7 @@ await onRefresh()
           {/* Current Members Section */}
           <Card style={styles.membersCard}>
             <View style={styles.cardHeader}>
-              <Users size={24} color="#f59e0b" />
+              <Users size={24} color='#f59e0b' />
               <Text style={styles.cardTitle}>
                 Current Members ({groupMembers.length})
               </Text>
@@ -518,6 +338,21 @@ await onRefresh()
                 </View>
               ))}
             </View>
+
+            <View>
+              {groupMembers.length === 0 && (
+                <Text style={{ color: '#a1a1aa', textAlign: 'center' }}>
+                  No members in this group
+                </Text>
+              )}
+              <Button
+                title='Add Members Manually?'
+                variant='outline'
+                size='sm'
+                onPress={handleShowAddMember}
+                style={{ marginTop: 18 }}
+              />
+            </View>
           </Card>
 
           {/* Instructions */}
@@ -539,15 +374,7 @@ await onRefresh()
             </View>
           </Card>
         </ScrollView>
-        {!isPro && (
-           <BannerAd
-                 unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                 requestOptions={{
-                   requestNonPersonalizedAdsOnly: true,
-                 }}
-               />
-        )}
+        {!isPro && <BannerAdComponent />}
       </LinearGradient>
     </View>
   );
@@ -588,18 +415,18 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
   },
   inviteCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 24,
   },
   membersCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 24,
   },
   instructionsCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     marginBottom: 32,
   },
   cardHeader: {
@@ -619,21 +446,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     marginBottom: 16,
   },
-  emailSection: {
+  shareSection: {
     gap: 16,
   },
-  emailInput: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+  shareDescription: {
+    fontSize: 14,
+    color: '#a1a1aa',
     fontFamily: 'Inter-Regular',
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#404040',
+    lineHeight: 20,
+    textAlign: 'center',
   },
-  sendButton: {
-    alignSelf: 'stretch',
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    maxWidth: 140,
+  },
+  shareNote: {
+    fontSize: 12,
+    color: '#71717a',
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   linkSection: {
     gap: 16,
@@ -659,7 +496,7 @@ const styles = StyleSheet.create({
   },
   membersList: {
     gap: 16,
-    marginBottom:29
+    marginBottom: 29,
   },
   memberItem: {
     flexDirection: 'row',
@@ -738,5 +575,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontFamily: 'Inter-Regular',
+  },
+  memberActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  removeButton: {
+    width: 36,
+    height: 36,
+    padding: 0,
   },
 });

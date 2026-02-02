@@ -1,4 +1,5 @@
 import AddMemberModal from '@/components/AddMemberModal';
+import { interstitialAdManager } from '@/components/AdMobManager';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import CurrencySelector from '@/components/CurrencySelector';
@@ -8,6 +9,7 @@ import { useApp } from '@/context/AppContext';
 import { auth, db } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore';
 import { User as UserType } from '@/types';
+import { copyInviteLink, shareGroupInvite } from '@/utils/shareUtils';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -22,10 +24,12 @@ import {
   where,
 } from 'firebase/firestore';
 import {
+  Copy,
   DollarSign,
   LogOut,
   Pencil,
   Settings as SettingsIcon,
+  Share2,
   Trash2,
   User,
   Users,
@@ -42,17 +46,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  InterstitialAd
-} from 'react-native-google-mobile-ads';
-
-
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -73,7 +66,7 @@ export default function SettingsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [groupMembers, setGroupMembers] = useState<UserType[]>([]);
-  console.log('the members',groupMembers)
+  console.log('the members', groupMembers);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
@@ -98,10 +91,9 @@ export default function SettingsScreen() {
 
     try {
       const members = await FirestoreService.getUsers(currentGroup.members);
-      console.log('refresh members are ', members)
+      console.log('refresh members are ', members);
       setGroupMembers(members);
-      return members
-
+      return members;
     } catch (error) {
       console.error('Error loading group members:', error);
     }
@@ -119,32 +111,32 @@ export default function SettingsScreen() {
     setShowCurrencySelector(false);
     Alert.alert('Success', `Currency changed to ${selectedCurrency}`);
   };
-const handleSignOut = () => {
-  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Sign Out',
-      style: 'destructive',
-      onPress: async () => {
-        try {
-          // 1️⃣ Sign out from Firebase
-          await firebaseSignOut(auth);
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // 1️⃣ Sign out from Firebase
+            await firebaseSignOut(auth);
 
-          // 2️⃣ Sign out from Google session
-          await GoogleSignin.signOut();
+            // 2️⃣ Sign out from Google session
+            await GoogleSignin.signOut();
 
-          // 3️⃣ (Optional) Disconnect to clear cached accounts
-          // await GoogleSignin.revokeAccess();
+            // 3️⃣ (Optional) Disconnect to clear cached accounts
+            // await GoogleSignin.revokeAccess();
 
-          router.replace('/auth');
-        } catch (error) {
-          console.log('Sign out error:', error);
-          Alert.alert('Error', 'Failed to sign out');
-        }
+            router.replace('/auth');
+          } catch (error) {
+            console.log('Sign out error:', error);
+            Alert.alert('Error', 'Failed to sign out');
+          }
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (memberId === user?.id) {
@@ -165,56 +157,56 @@ const handleSignOut = () => {
         {
           text: 'Remove',
           style: 'destructive',
-      onPress: async () => {
-  try {
-    // Remove member from Firestore group
-    const groupRef = doc(db, 'groups', currentGroup.id);
-    await updateDoc(groupRef, {
-      members: currentGroup.members.filter((id) => id !== memberId),
-    });
+          onPress: async () => {
+            try {
+              // Remove member from Firestore group
+              const groupRef = doc(db, 'groups', currentGroup.id);
+              await updateDoc(groupRef, {
+                members: currentGroup.members.filter((id) => id !== memberId),
+              });
 
-    // Remove from local state
-    setGroupMembers(groupMembers.filter((member) => member.id !== memberId));
+              // Remove from local state
+              setGroupMembers(
+                groupMembers.filter((member) => member.id !== memberId),
+              );
 
-    Alert.alert(
-      'Success',
-      `${memberName} has been removed from the group.`
-    );
-  } catch (error) {
-    Alert.alert('Error', 'Failed to remove member');
-  }
-}
-
+              Alert.alert(
+                'Success',
+                `${memberName} has been removed from the group.`,
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove member');
+            }
+          },
         },
-      ]
+      ],
     );
   };
 
   // Add member handler
   const handleAddMember = async (member) => {
-    console.log('step1')
+    console.log('step1');
     // Find user by email in Firestore
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', member.email));
     const querySnapshot = await getDocs(q);
-    console.log('step2')
+    console.log('step2');
 
     if (querySnapshot.empty) {
       Alert.alert(
         'User Not Found',
-        'No user found with this email. Please ask them to sign up first.'
+        'No user found with this email. Please ask them to sign up first.',
       );
       return;
     }
 
     const userDoc = querySnapshot.docs[0];
     const userId = userDoc.id;
-    console.log('step3', userId)
-
+    console.log('step3', userId);
 
     // Add userId to group members in Firestore
     const groupRef = doc(db, 'groups', currentGroup.id);
-    console.log('step3', groupRef)
+    console.log('step3', groupRef);
 
     const groupSnap = await getDoc(groupRef);
     if (!groupSnap.exists()) return;
@@ -231,12 +223,12 @@ const handleSignOut = () => {
 
     // Refresh local members list
     // await loadGroupMembers();
-    
+
     // setTimeout(async() => {
-await onRefresh()
+    await onRefresh();
 
     Alert.alert('Success', 'Member added to the group!');
-      
+
     // }, 1000);
   };
 
@@ -286,14 +278,14 @@ await onRefresh()
                 '',
                 '',
                 '',
-                null
+                null,
               );
               setUserSelectedPlan(null);
               setIsPro(false);
               null;
               Alert.alert(
                 'Subscription Removed',
-                'Your subscription has been removed successfully.'
+                'Your subscription has been removed successfully.',
               );
             } catch (error) {
               console.error('Error removing subscription:', error);
@@ -301,46 +293,54 @@ await onRefresh()
             }
           },
         },
-      ]
+      ],
     );
   };
 
   // Show interstitial ad before opening AddMemberModal
-  const handleShowAddMember = () => {
+  const handleShowAddMember = async () => {
     if (isPro) {
       setShowAddMemberModal(true);
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      }
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
         setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-      }
-    );
-    // If ad fails to load, open modal anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        setShowAddMemberModal(true);
-        adListener();
-        closeListener();
-        errorListener();
-      }
-    );
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddMemberModal(true);
+    }
+  };
+
+  // Share group invite handlers
+  const handleShareGroup = async () => {
+    if (!currentGroup || !user) return;
+    
+    const success = await shareGroupInvite({
+      groupId: currentGroup.id,
+      groupName: currentGroup.name,
+      inviterName: user.displayName,
+    });
+    
+    if (success) {
+      console.log('Group invite shared successfully');
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!currentGroup) return;
+    
+    await copyInviteLink(currentGroup.id);
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -360,7 +360,7 @@ await onRefresh()
           {/* User Profile Section */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <User size={24} color="#6366f1" />
+              <User size={24} color='#6366f1' />
               <Text style={styles.sectionTitle}>Profile</Text>
             </View>
 
@@ -433,7 +433,7 @@ await onRefresh()
                   >
                     <Text style={styles.userName}>{user.displayName}</Text>
                     <TouchableOpacity onPress={() => setEditingName(true)}>
-                      <Pencil size={18} color="#6366f1" />
+                      <Pencil size={18} color='#6366f1' />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -445,7 +445,7 @@ await onRefresh()
           {/* Currency Settings */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <DollarSign size={24} color="#10b981" />
+              <DollarSign size={24} color='#10b981' />
               <Text style={styles.sectionTitle}>Currency</Text>
             </View>
 
@@ -458,9 +458,9 @@ await onRefresh()
               </View>
 
               <Button
-                title="Change"
-                variant="outline"
-                size="sm"
+                title='Change'
+                variant='outline'
+                size='sm'
                 onPress={() => setShowCurrencySelector(true)}
               />
             </View>
@@ -469,7 +469,7 @@ await onRefresh()
           {/* Group Members */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <Users size={24} color="#f59e0b" />
+              <Users size={24} color='#f59e0b' />
               <Text style={styles.sectionTitle}>
                 Group Members ({groupMembers.length})
               </Text>
@@ -499,10 +499,10 @@ await onRefresh()
                     {currentGroup.createdBy === user.id &&
                       member.id !== user.id && (
                         <Button
-                          title=""
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash2 size={16} color="#ef4444" />}
+                          title=''
+                          variant='ghost'
+                          size='sm'
+                          icon={<Trash2 size={16} color='#ef4444' />}
                           onPress={() =>
                             handleRemoveMember(member.id, member.displayName)
                           }
@@ -519,9 +519,9 @@ await onRefresh()
                   </Text>
                 )}
                 <Button
-                  title="Add Members Manually?"
-                  variant="outline"
-                  size="sm"
+                  title='Add Members Manually?'
+                  variant='outline'
+                  size='sm'
                   onPress={handleShowAddMember}
                   style={{ marginTop: 18 }}
                 />
@@ -534,6 +534,44 @@ await onRefresh()
             </View>
           </Card>
 
+          {/* Share Group */}
+          <Card style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Share2 size={24} color='#8b5cf6' />
+              <Text style={styles.sectionTitle}>Share Group</Text>
+            </View>
+            
+            <View style={styles.shareSection}>
+              <Text style={styles.shareDescription}>
+                Invite friends to join "{currentGroup?.name}" by sharing the group link
+              </Text>
+              
+              <View style={styles.shareButtons}>
+                <Button
+                  title='Share Invite'
+                  variant='primary'
+                  size='sm'
+                  icon={<Share2 size={16} color='#ffffff' />}
+                  onPress={handleShareGroup}
+                  style={styles.shareButton}
+                />
+                
+                <Button
+                  title='Copy Link'
+                  variant='outline'
+                  size='sm'
+                  icon={<Copy size={16} color='#6366f1' />}
+                  onPress={handleCopyInviteLink}
+                  style={styles.shareButton}
+                />
+              </View>
+              
+              <Text style={styles.shareNote}>
+                💡 Friends will be prompted to download the app if they don't have it
+              </Text>
+            </View>
+          </Card>
+
           {/* Remove  Card */}
           {!isPro ? (
             <Card style={styles.sectionCard}>
@@ -541,8 +579,8 @@ await onRefresh()
                 <Text style={styles.sectionTitle}>Remove Ads</Text>
               </View>
               <Button
-                title="Remove Ads"
-                variant="outline"
+                title='Remove Ads'
+                variant='outline'
                 onPress={() => setShowSubscribe(true)}
                 style={{ marginTop: 8 }}
               />
@@ -608,14 +646,14 @@ await onRefresh()
           {/* Actions */}
           <Card style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <SettingsIcon size={24} color="#ef4444" />
+              <SettingsIcon size={24} color='#ef4444' />
               <Text style={styles.sectionTitle}>Actions</Text>
             </View>
 
             <Button
-              title="Sign Out"
-              variant="outline"
-              icon={<LogOut size={20} color="#ef4444" />}
+              title='Sign Out'
+              variant='outline'
+              icon={<LogOut size={20} color='#ef4444' />}
               onPress={handleSignOut}
               style={styles.signOutButton}
             />
@@ -660,7 +698,7 @@ await onRefresh()
         {showSubscribe && <Subscribe onClose={() => setShowSubscribe(false)} />}
 
         {/* Privacy Policy Modal */}
-        <Modal visible={showPrivacy} animationType="slide" transparent>
+        <Modal visible={showPrivacy} animationType='slide' transparent>
           <View
             style={{
               flex: 1,
@@ -696,8 +734,8 @@ await onRefresh()
                   functionality. For more details, please contact support.
                 </Text>
                 <Button
-                  size="sm"
-                  title="Close"
+                  size='sm'
+                  title='Close'
                   onPress={() => setShowPrivacy(false)}
                 />
               </ScrollView>
@@ -761,10 +799,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
   },
   sectionCard: {
-    backgroundColor: '#262626',
+    backgroundColor: '#3a1d4bff',
     marginBottom: 24,
   },
   sectionHeader: {
@@ -907,5 +945,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  shareSection: {
+    gap: 16,
+  },
+  shareDescription: {
+    fontSize: 14,
+    color: '#a1a1aa',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    maxWidth: 140,
+  },
+  shareNote: {
+    fontSize: 12,
+    color: '#71717a',
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

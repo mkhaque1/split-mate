@@ -1,4 +1,5 @@
 import AddExpenseModal from '@/components/AddExpenseModal';
+import { BannerAdComponent, interstitialAdManager } from '@/components/AdMobManager';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import ExpenseItem from '@/components/ExpenseItem';
@@ -17,18 +18,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  AdEventType,
-  BannerAd,
-  BannerAdSize,
-  InterstitialAd
-} from 'react-native-google-mobile-ads';
 import { useApp } from '../../context/AppContext';
 import { CalculationService } from '../../lib/calculation';
-const REAL_INTERSTITIAL_ID = 'ca-app-pub-8613339095164526/3230937993';
-const interstitial = InterstitialAd.createForAdRequest(REAL_INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
 
 export default function ExpensesScreen() {
   const { user, currentGroup, expenses, refreshExpenses, refreshGroups } =
@@ -119,47 +110,34 @@ export default function ExpensesScreen() {
   const totalExpenses = CalculationService.getTotalExpenses(expenses);
   const userPaidTotal = CalculationService.getUserExpenseTotal(
     expenses,
-    user.id
+    user.id,
   );
   const userOwedTotal = CalculationService.getUserOwedAmount(expenses, user.id);
   const userBalance = userPaidTotal - userOwedTotal;
 
   // Show interstitial ad before opening AddExpenseModal
-  const handleShowAddExpense = () => {
+  const handleShowAddExpense = async () => {
     if (isPro) {
       setShowAddExpense(true);
       return;
     }
-    interstitial.load();
-    const adListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        interstitial.show();
-      }
-    );
-    const closeListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
+    
+    // Try to show interstitial ad
+    const adShown = await interstitialAdManager.showAd();
+    if (adShown) {
+      // Ad was shown, wait a moment then show modal
+      setTimeout(() => {
         setShowAddExpense(true);
-        adListener();
-        closeListener();
-      }
-    );
-    // If ad fails to load, open modal anyway
-    const errorListener = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      () => {
-        setShowAddExpense(true);
-        adListener();
-        closeListener();
-        errorListener();
-      }
-    );
+      }, 500);
+    } else {
+      // Ad not available, show modal immediately
+      setShowAddExpense(true);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+      <LinearGradient colors={['#0f0f0f', '#281f5a']} style={styles.gradient}>
         <View style={styles.header}>
           <GradientText
             style={styles.title}
@@ -179,7 +157,7 @@ export default function ExpensesScreen() {
           <View style={styles.summaryRow}>
             <Card style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
-                <DollarSign size={20} color="#6366f1" />
+                <DollarSign size={20} color='#6366f1' />
                 <Text style={styles.summaryLabel}>Total</Text>
               </View>
               <Text style={styles.summaryAmount}>
@@ -208,8 +186,8 @@ export default function ExpensesScreen() {
           </View>
 
           <Button
-            title="Add New Expense"
-            icon={<Plus size={20} color="#ffffff" />}
+            title='Add New Expense'
+            icon={<Plus size={20} color='#ffffff' />}
             onPress={handleShowAddExpense}
             style={styles.addButton}
           />
@@ -249,13 +227,7 @@ export default function ExpensesScreen() {
         {/* Fixed bottom ad, like summary.tsx */}
         {!isPro && (
           <View style={styles.footer}>
-            <BannerAd
-              unitId={'ca-app-pub-8613339095164526/4093158170'} // Replace with your actual ad unit ID in production
-              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-              requestOptions={{
-                requestNonPersonalizedAdsOnly: true,
-              }}
-            />
+            <BannerAdComponent />
           </View>
         )}
       </LinearGradient>
@@ -270,7 +242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0f0f0f',
+    backgroundColor: '#2b1753ff',
   },
   loadingText: {
     color: '#ffffff',
@@ -303,7 +275,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -334,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyState: {
-    backgroundColor: '#262626',
+    backgroundColor: '#2b1753ff',
     alignItems: 'center',
     paddingVertical: 32,
   },
@@ -353,9 +325,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: 60,
-    padding: 10,
-    backgroundColor: '#1e1e1e',
+    height: 80,
+    padding: 0,
+    backgroundColor: '#2b1753ff',
     alignItems: 'center',
   },
 });

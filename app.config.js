@@ -19,14 +19,12 @@ export default {
       },
     },
     android: {
-      googleServicesFile: "./google-services.json",
+      googleServicesFile: './google-services.json',
 
       adaptiveIcon: {
-        foregroundImage: './assets/images/icon.jpg',
+        foregroundImage: './assets/images/logo.gif',
         backgroundColor: '#ffffff',
-
       },
-  
 
       edgeToEdgeEnabled: true,
       package: 'com.splitmate.app',
@@ -72,16 +70,13 @@ export default {
       [
         'expo-splash-screen',
         {
-          image: './assets/images/icon.jpg',
+          image: './assets/images/logo.gif',
           imageWidth: 200,
           resizeMode: 'contain',
           backgroundColor: '#ffffff',
         },
       ],
-      [
-        "@react-native-google-signin/google-signin",
-    
-      ]
+      ['@react-native-google-signin/google-signin'],
     ],
     experiments: {
       typedRoutes: true,

@@ -4,9 +4,11 @@ import PrivacyModal from '@/components/PrivacyModal';
 import { useApp } from '@/context/AppContext';
 import { AuthService } from '@/lib/auth';
 import { FirestoreService } from '@/lib/firestore';
+import { getAuthErrorMessage, getGoogleSignInErrorMessage } from '@/utils/errorMessages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  GoogleSignin
+  GoogleSignin,
+  statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -30,14 +32,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // WebBrowser.maybeCompleteAuthSession();
 
-
-GoogleSignin.configure({
-  
-  webClientId: "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com", 
-  offlineAccess: true,
-});
 export default function AuthScreen() {
-  const devicewidth = Dimensions.get('window').width
+  const devicewidth = Dimensions.get('window').width;
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,130 +43,136 @@ export default function AuthScreen() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [userInfo,setuserInfo] = useState(null)
-  const [Loader,setLoader] = useState(false)
-  useEffect(() => {
-  GoogleSignin.configure({
-    webClientId: "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com",
-    offlineAccess: true,
-  });
-  console.log("Configured with webClientId:", "942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com");
-}, []);
+  const [userInfo, setuserInfo] = useState<any>(null);
+  const [Loader, setLoader] = useState(false);
 
   useEffect(() => {
-    AuthService.getCurrentUser().then(async (user) => {
-      if (user) {
-        await AsyncStorage.setItem('user', JSON.stringify(user));
-        router.replace('/(tabs)');
+    const configureGoogleSignIn = async () => {
+      try {
+        await GoogleSignin.configure({
+          webClientId:
+            '942853203229-a85mf84kj85b0oug7e1nhkoml86chemn.apps.googleusercontent.com',
+          offlineAccess: true,
+          hostedDomain: '',
+          forceCodeForRefreshToken: true,
+        });
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Google Sign-In configuration error:', error);
       }
-    });
+    };
+
+    configureGoogleSignIn();
   }, []);
 
-  // useEffect(() => {
-  //   if (response?.type === 'success') {
-  //     const { id_token, access_token } = response.authentication as any;
-  //     handleGoogleLogin(id_token, access_token);
-  //   }
-  // }, [response]);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Check current user
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          console.log('User already signed in:', currentUser.email);
+          await AsyncStorage.setItem('user', JSON.stringify(currentUser));
+          router.replace('/(tabs)');
+        } else {
+          console.log('No current user found');
+        }
+      } catch (error) {
+        console.error('Error checking current user:', error);
+      }
+    };
 
+    initializeAuth();
+  }, []);
 
+  const handleGoogleSignin = async () => {
+    console.log('Starting Google Sign-In...');
+    setLoader(true);
 
-  // const handleGoogleLogin = async (idToken: string, accessToken: string) => {
-  //   setLoading(true);
-  //   try {
-  //     const user = await AuthService.signInWithGoogle(idToken, accessToken);
-  //     await AsyncStorage.setItem('user', JSON.stringify(user));
-
-  //     // ADD THIS LOGIC HERE
-  //     let groups = await FirestoreService.getUserGroups(user.id);
-  //     if (groups.length === 0) {
-  //       await FirestoreService.createGroup({
-  //         name: `${user.displayName || 'My'}'s Group`,
-  //         members: [user.id],
-  //         createdBy: user.id,
-  //         currency: 'USD',
-  //       });
-  //       await refreshGroups();
-  //     }
-
-  //     await refreshGroups();
-  //     router.replace('/(tabs)');
-  //   } catch (error: any) {
-  //     Alert.alert('Error', error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-const handleGoogleSignin = async () => {
-  console.log('calling Google Sign-In...');
-  setLoader(true)
-  try {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
-    // ✅ Get tokens
-    const { idToken, user } = await GoogleSignin.signIn();
-    const { accessToken } = await GoogleSignin.getTokens();
-
-    // ✅ Authenticate with Firebase via AuthService
-    const savedUser = await AuthService.signInWithGoogle(idToken!, accessToken!);
-
-    // ✅ Save locally
-    await AsyncStorage.setItem('user', JSON.stringify(savedUser));
-
-    // ✅ Create default group & marketing consent (move this inside AuthService if you prefer central logic)
-    let groups = await FirestoreService.getUserGroups(savedUser.id);
-    if (groups.length === 0) {
-      await FirestoreService.createGroup({
-        name: `${savedUser.displayName || 'My'}'s Group`,
-        members: [savedUser.id],
-        createdBy: savedUser.id,
-        currency: 'USD',
+    try {
+      // Check if Google Play Services are available
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
       });
-      await FirestoreService.setUserMarketingConsent(savedUser.id, acceptMarketing);
-      await refreshGroups();
-    }
 
-    setuserInfo(savedUser);
-setLoader(false)
+      // Sign out any existing user first to ensure clean state
+      await GoogleSignin.signOut();
 
-    // setTimeout(() => {
+      // Sign in with Google
+      const userInfo = await GoogleSignin.signIn();
+      console.log('Google Sign-In successful:', userInfo);
+
+      if (!userInfo.data?.idToken) {
+        throw new Error('No ID token received from Google Sign-In');
+      }
+
+      // Get access token
+      const tokens = await GoogleSignin.getTokens();
+      console.log('Tokens received');
+
+      // Authenticate with Firebase
+      const savedUser = await AuthService.signInWithGoogle(
+        userInfo.data.idToken,
+        tokens.accessToken,
+      );
+
+      console.log('Firebase authentication successful:', savedUser);
+
+      // Save user data locally
+      await AsyncStorage.setItem('user', JSON.stringify(savedUser));
+
+      // Create default group if user is new
+      let groups = await FirestoreService.getUserGroups(savedUser.id);
+      if (groups.length === 0) {
+        await FirestoreService.createGroup({
+          name: `${savedUser.displayName || 'My'}'s Group`,
+          members: [savedUser.id],
+          createdBy: savedUser.id,
+          currency: 'USD',
+        });
+
+        // Set marketing consent
+        await FirestoreService.setUserMarketingConsent(
+          savedUser.id,
+          acceptMarketing,
+        );
+
+        await refreshGroups();
+      }
+
+      setuserInfo(savedUser);
+      setLoader(false);
+
+      // Navigate to main app
       router.replace('/(tabs)');
-    // }, 200);
+    } catch (error: any) {
+      console.error('Google Sign-In error:', error);
+      setLoader(false);
 
-  } catch (error: any) {
-    console.log('Google Sign-In error:', error);
+      let errorMessage = 'Unable to sign in with Google. Please try again.';
 
-    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-      Alert.alert('Cancelled', 'User cancelled the login flow');
-setLoader(false)
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled - don't show error, just return
+        return;
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        errorMessage = 'Sign-in is already in progress. Please wait.';
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        errorMessage = 'Google Play Services are not available or outdated. Please update Google Play Services and try again.';
+      } else if (error.message) {
+        errorMessage = getGoogleSignInErrorMessage(error);
+      }
 
-    } else if (error.code === statusCodes.IN_PROGRESS) {
-      Alert.alert('In Progress', 'Sign in is in progress');
-setLoader(false)
-
-    } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-      Alert.alert('Error', 'Play services are not available or outdated');
-setLoader(false)
-
-    } else {
-      Alert.alert('Error', error.message);
-setLoader(false)
-
+      Alert.alert('Google Sign-In Error', errorMessage, [{ text: 'OK', style: 'default' }]);
     }
-  }
-};
-
-
-
-
+  };
 
   const handleAuth = async () => {
     if (!email || !password || (isSignUp && !displayName)) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Missing Information', 'Please fill in all required fields to continue.');
       return;
     }
     if (isSignUp && !acceptedPrivacy) {
-      Alert.alert('Error', 'You must accept the Privacy Policy to continue.');
+      Alert.alert('Privacy Policy Required', 'You must accept the Privacy Policy to create an account.');
       return;
     }
     setLoading(true);
@@ -189,7 +191,7 @@ setLoader(false)
         // Store marketing consent in Firestore
         await FirestoreService.setUserMarketingConsent(
           user.id,
-          acceptMarketing
+          acceptMarketing,
         );
 
         await refreshGroups();
@@ -202,236 +204,250 @@ setLoader(false)
       }, 2000);
       setLoading(false);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Authentication error:', error);
+      
+      // Professional error messages based on Firebase error codes
+      const errorMessage = error.code ? getAuthErrorMessage(error.code) : (error.message || 'An unexpected error occurred. Please try again.');
+      
+      Alert.alert(
+        isSignUp ? 'Sign Up Failed' : 'Sign In Failed', 
+        errorMessage,
+        [{ text: 'OK', style: 'default' }]
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{flex:1}}>
-
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <SafeAreaView
+      style={{
+        flex: 1,
+      }}
     >
-      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
-
-
-   <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <GradientText
-              style={styles.title}
-              colors={['#ffffff', '#a1a1aa', '#71717a']}
-            >
-              SplitMate
-            </GradientText>
-            <Text style={styles.subtitle}>Smart Shared Expense Tracker</Text>
-          </View>
-
-          <View style={styles.form}>
-            <View style={styles.toggleContainer}>
-              <Button
-                title="Sign In"
-                variant={!isSignUp ? 'primary' : 'ghost'}
-                size="sm"
-                onPress={() => setIsSignUp(false)}
-                style={styles.toggleButton}
-              />
-
-              <Button
-                title="Sign Up"
-                variant={isSignUp ? 'primary' : 'ghost'}
-                size="sm"
-                onPress={() => setIsSignUp(true)}
-                style={styles.toggleButton}
-              />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.gradient}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+              <GradientText
+                style={styles.title}
+                colors={['#ffffff', '#a1a1aa', '#71717a']}
+              >
+                SplitMate
+              </GradientText>
+              <Text style={styles.subtitle}>Smart Shared Expense Tracker</Text>
             </View>
 
-            {isSignUp && (
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput
-                  style={styles.input}
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  placeholder="Enter your full name"
-                  placeholderTextColor="#71717a"
-                  autoCapitalize="words"
+            <View style={styles.form}>
+              <View style={styles.toggleContainer}>
+                <Button
+                  title='Sign In'
+                  variant={!isSignUp ? 'primary' : 'ghost'}
+                  size='sm'
+                  onPress={() => setIsSignUp(false)}
+                  style={styles.toggleButton}
+                />
+
+                <Button
+                  title='Sign Up'
+                  variant={isSignUp ? 'primary' : 'ghost'}
+                  size='sm'
+                  onPress={() => setIsSignUp(true)}
+                  style={styles.toggleButton}
                 />
               </View>
-            )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                placeholderTextColor="#71717a"
-                // keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+              {isSignUp && (
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Full Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={displayName}
+                    onChangeText={setDisplayName}
+                    placeholder='Enter your full name'
+                    placeholderTextColor='#71717a'
+                    autoCapitalize='words'
+                  />
+                </View>
+              )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor="#71717a"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder='Enter your email'
+                  placeholderTextColor='#71717a'
+                  // keyboardType="email-address"
+                  autoCapitalize='none'
+                />
+              </View>
 
-            {isSignUp && (
-              <>
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 12,
-                  }}
-                  onPress={() => setAcceptedPrivacy(!acceptedPrivacy)}
-                >
-                  <View
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder='Enter your password'
+                  placeholderTextColor='#71717a'
+                  secureTextEntry
+                />
+              </View>
+
+              {isSignUp && (
+                <>
+                  <TouchableOpacity
                     style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: '#6366f1',
-                      backgroundColor: acceptedPrivacy
-                        ? '#6366f1'
-                        : 'transparent',
-                      marginRight: 10,
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      marginBottom: 12,
                     }}
+                    onPress={() => setAcceptedPrivacy(!acceptedPrivacy)}
                   >
-                    {acceptedPrivacy && (
-                      <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
-                    )}
-                  </View>
-                  <Text
-                    style={{
-                      color: '#fff',
-                      fontFamily: 'Inter-Regular',
-                      fontSize: 14,
-                    }}
-                  >
-                    I have read and accept the{' '}
+                    <View
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: '#6366f1',
+                        backgroundColor: acceptedPrivacy
+                          ? '#6366f1'
+                          : 'transparent',
+                        marginRight: 10,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {acceptedPrivacy && (
+                        <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
+                      )}
+                    </View>
                     <Text
                       style={{
-                        color: '#6366f1',
-                        textDecorationLine: 'underline',
+                        color: '#fff',
+                        fontFamily: 'Inter-Regular',
+                        fontSize: 14,
                       }}
-                      onPress={() => setShowPrivacy(true)}
                     >
-                      Privacy Policy
+                      I have read and accept the{' '}
+                      <Text
+                        style={{
+                          color: '#6366f1',
+                          textDecorationLine: 'underline',
+                        }}
+                        onPress={() => setShowPrivacy(true)}
+                      >
+                        Privacy Policy
+                      </Text>
                     </Text>
-                  </Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 20,
-                  }}
-                  onPress={() => setAcceptMarketing(!acceptMarketing)}
-                >
-                  <View
+                  <TouchableOpacity
                     style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: '#6366f1',
-                      backgroundColor: acceptMarketing
-                        ? '#6366f1'
-                        : 'transparent',
-                      marginRight: 10,
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      marginBottom: 20,
                     }}
+                    onPress={() => setAcceptMarketing(!acceptMarketing)}
                   >
-                    {acceptMarketing && (
-                      <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
-                    )}
-                  </View>
-                  <Text
-                    style={{
-                      color: '#fff',
-                      fontFamily: 'Inter-Regular',
-                      fontSize: 14,
-                    }}
-                  >
-                    I want to receive marketing emails and future updates
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
+                    <View
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: '#6366f1',
+                        backgroundColor: acceptMarketing
+                          ? '#6366f1'
+                          : 'transparent',
+                        marginRight: 10,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {acceptMarketing && (
+                        <Text style={{ color: '#fff', fontSize: 14 }}>✓</Text>
+                      )}
+                    </View>
+                    <Text
+                      style={{
+                        color: '#fff',
+                        fontFamily: 'Inter-Regular',
+                        fontSize: 14,
+                      }}
+                    >
+                      I want to receive marketing emails and future updates
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
-            <Button
-              title={isSignUp ? 'Create Account' : 'Sign In'}
-              onPress={handleAuth}
-              loading={loading}
-              style={styles.authButton}
-            />
-<Text style={{color:'#fff', fontSize: 16,
-    fontFamily: 'Inter-Bold',alignSelf:'center',marginVertical:15}}>
-  OR
-</Text>
-            
-
-            {
-  Loader ? 
-  <ActivityIndicator size={'large'} color={'#6366f1'} /> :
-
-  <Button
-              title={'Sign In with Google'}
-              onPress={handleGoogleSignin}
-              loading={Loader}
-              style={styles.authButton}
-            />
-            }
-            
-
-          </View>
-        </ScrollView>
-
-   
-        {!isSignUp && (
-          <View style={styles.header}>
-            <Text style={styles.footerText}>
-              By continuing, you agree to our{'\n'}
+              <Button
+                title={isSignUp ? 'Create Account' : 'Sign In'}
+                onPress={handleAuth}
+                loading={loading}
+                style={styles.authButton}
+              />
               <Text
-                style={{ color: '#6366f1', textDecorationLine: 'underline' }}
-                onPress={() => Linking.openURL('https://pyonet.com')}
+                style={{
+                  color: '#fff',
+                  fontSize: 16,
+                  fontFamily: 'Inter-Bold',
+                  alignSelf: 'center',
+                  marginVertical: 15,
+                }}
               >
-                Terms of Service
-              </Text>{' '}
-              and{' '}
-              <Text
-                style={{ color: '#6366f1', textDecorationLine: 'underline' }}
-                onPress={() => setShowPrivacy(true)}
-              >
-                Privacy Policy
+                OR
               </Text>
-            </Text>
-          </View>
-        )}
-        {showPrivacy && (
-          <PrivacyModal visible={true} onClose={() => setShowPrivacy(false)} />
-        )}
-      </LinearGradient>
-    </KeyboardAvoidingView>
-    </SafeAreaView>
 
+              {Loader ? (
+                <ActivityIndicator size={'large'} color={'#6366f1'} />
+              ) : (
+                <Button
+                  title={'Sign In with Google'}
+                  onPress={handleGoogleSignin}
+                  loading={Loader}
+                  style={styles.authButton}
+                />
+              )}
+            </View>
+          </ScrollView>
+
+          {!isSignUp && (
+            <View style={styles.header}>
+              <Text style={styles.footerText}>
+                By continuing, you agree to our{'\n'}
+                <Text
+                  style={{ color: '#6366f1', textDecorationLine: 'underline' }}
+                  onPress={() => Linking.openURL('https://pyonet.com')}
+                >
+                  Terms of Service
+                </Text>{' '}
+                and{' '}
+                <Text
+                  style={{ color: '#6366f1', textDecorationLine: 'underline' }}
+                  onPress={() => setShowPrivacy(true)}
+                >
+                  Privacy Policy
+                </Text>
+              </Text>
+            </View>
+          )}
+          {showPrivacy && (
+            <PrivacyModal
+              visible={true}
+              onClose={() => setShowPrivacy(false)}
+            />
+          )}
+        </LinearGradient>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -445,7 +461,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 10,
+    padding: 30,
   },
   header: {
     alignItems: 'center',
@@ -499,7 +515,7 @@ const styles = StyleSheet.create({
     borderColor: '#404040',
   },
   authButton: {
-    marginTop: 16,
+    marginTop: 10,
   },
   footerText: {
     color: '#a1a1aa',

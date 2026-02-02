@@ -5,7 +5,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Get env variables from Constants
+// Get env variables from Constants with fallbacks
 const {
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
@@ -14,19 +14,25 @@ const {
   FIREBASE_MESSAGING_SENDER_ID,
   FIREBASE_APP_ID,
   FIREBASE_MEASUREMENT_ID,
-} = Constants.expoConfig.extra;
+} = Constants.expoConfig?.extra || {};
 
-console.log('Firebase Key:', FIREBASE_API_KEY); // ✅ This should now log your API key
-
+// Fallback configuration if env variables are not available
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID,
-  measurementId: FIREBASE_MEASUREMENT_ID,
+  apiKey: FIREBASE_API_KEY || 'AIzaSyC2bY-dI12BDtLj9-bqHLdDTiwNGALkJ6c',
+  authDomain: FIREBASE_AUTH_DOMAIN || 'split-mate-app-1f212.firebaseapp.com',
+  projectId: FIREBASE_PROJECT_ID || 'split-mate-app-1f212',
+  storageBucket: FIREBASE_STORAGE_BUCKET || 'split-mate-app-1f212.firebasestorage.app',
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID || '942853203229',
+  appId: FIREBASE_APP_ID || '1:942853203229:android:145e5ecee3020c97e32df4',
+  // Only include measurementId if it's available and not a placeholder
+  ...(FIREBASE_MEASUREMENT_ID && FIREBASE_MEASUREMENT_ID !== 'G-XXXXXXXXXX' ? { measurementId: FIREBASE_MEASUREMENT_ID } : {}),
 };
+
+console.log('Firebase Config:', {
+  apiKey: firebaseConfig.apiKey ? '***' : 'MISSING',
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+});
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
@@ -34,7 +40,7 @@ let analytics;
 try {
   analytics = getAnalytics(app);
 } catch (e) {
-  // Ignore on native
+  console.log('Analytics not available (normal in development):', e.message);
 }
 
 const auth = initializeAuth(app, {

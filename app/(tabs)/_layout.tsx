@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, Receipt, Settings, UserPlus } from 'lucide-react-native';
 import { Platform } from 'react-native';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
-   const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -14,7 +14,7 @@ export default function TabLayout() {
           borderTopColor: '#f1f5f9',
           paddingTop: 0,
           paddingBottom: 0,
-            height: 80 + (Platform.OS === "android" ? insets.bottom : 0), // dynamic bottom inset
+          height: 60 + (Platform.OS === 'android' ? insets.bottom : 0), // dynamic bottom inset
         },
         tabBarIconStyle: {
           marginTop: 5,
@@ -31,7 +31,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name='index'
         options={{
           title: 'Expenses',
           tabBarIcon: ({ size, color }) => (
@@ -40,7 +40,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="summary"
+        name='summary'
         options={{
           title: 'Summary',
           tabBarIcon: ({ size, color }) => (
@@ -49,7 +49,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="invite"
+        name='invite'
         options={{
           title: 'Invite',
           tabBarIcon: ({ size, color }) => (
@@ -58,7 +58,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name='settings'
         options={{
           title: 'Settings',
           tabBarIcon: ({ size, color }) => (
